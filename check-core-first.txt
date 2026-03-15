@@ -1,0 +1,24 @@
+npm run typecheck
+npm run test
+Select-String -Path src\core\**\*.ts -Pattern "react|next|prisma|zustand|xyflow"
+
+Modular Monolith with Hexagonal friendly Architecture для стеку.
+структура core/ → infrastructure/ → presentation/ чітко ізолює домен від Next.js і Prisma.
+
+стек
+Framework → Next.js
+UI → React + @xyflow/react
+State (canvas)Zustand
+DB ORM → Prisma
+Database → PostgreSQL
+Auth → NextAuth.js
+Styling → Tailwind CSS
+
+npm install
+npx prisma generate
+Переконайся, що є .env файл із рядком підключення до БД: DATABASE_URL="postgresql://user:password@localhost:5432/dbname"
+npx prisma migrate dev
+npx prisma db push
+Do you want to ignore the warning(s)? ... yes
+npm run dev
+npm run test

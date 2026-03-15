@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nodes     Node[]
+  edges     Edge[]
+
+  @@index([ownerId])
+}
+
+model Node {
+  id          String   @id @default(uuid())
+  type        String
+  label       String
+  description String?
+  positionX   Float    @default(0)
+  positionY   Float    @default(0)
+  parentId    String?
+  projectId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent       Node?   @relation("NodeChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Node[]  @relation("NodeChildren")
+  sourcedEdges Edge[]  @relation("EdgeSource")
+  targetedEdges Edge[] @relation("EdgeTarget")
+
+  @@index([projectId])
+  @@index([parentId])
+}
+
+model Edge {
+  id        String   @id @default(uuid())
+  type      String
+  label     String?
+  projectId String
+  sourceId  String
+  targetId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  source  Node    @relation("EdgeSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  target  Node    @relation("EdgeTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([sourceId])
+  @@index([targetId])
+}
