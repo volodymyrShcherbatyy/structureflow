@@ -22,3 +22,7 @@ npx prisma db push
 Do you want to ignore the warning(s)? ... yes
 npm run dev
 npm run test
+
+git add .
+git commit -m "update"
+git push
