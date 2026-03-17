@@ -1,7 +1,9 @@
-import { ReactNode } from 'react';
-import { redirect } from 'next/navigation';
+export const dynamic = "force-dynamic";
 
-import { getServerSession } from '../../infrastructure/auth/nextauth/getServerSession';
+import { ReactNode } from "react";
+import { redirect } from "next/navigation";
+
+import { getServerSession } from "../../infrastructure/auth/nextauth/getServerSession";
 
 type ProtectedLayoutProps = {
   children: ReactNode;
@@ -10,8 +12,8 @@ type ProtectedLayoutProps = {
 export default async function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const session = await getServerSession();
 
-  if (!session?.user?.id) {
-    redirect('/signin');
+  if (!session) {
+    redirect("/signin");
   }
 
   return children;

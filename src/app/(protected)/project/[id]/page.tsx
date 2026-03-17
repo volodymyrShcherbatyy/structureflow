@@ -1,14 +1,14 @@
 import { notFound, redirect } from 'next/navigation';
 
-import { ProjectId } from '../../../../../core/domain/value-objects/ProjectId';
-import { getServerSession } from '../../../../../infrastructure/auth/nextauth/getServerSession';
-import { prisma } from '../../../../../infrastructure/persistence/prisma/client';
-import { PrismaEdgeRepository } from '../../../../../infrastructure/persistence/prisma/repositories/PrismaEdgeRepository';
-import { PrismaNodeRepository } from '../../../../../infrastructure/persistence/prisma/repositories/PrismaNodeRepository';
-import { PrismaProjectRepository } from '../../../../../infrastructure/persistence/prisma/repositories/PrismaProjectRepository';
-import { CanvasInitializer } from '../../../../../presentation/canvas/CanvasInitializer';
-import { coreEdgeToFlow } from '../../../../../presentation/canvas/mappers/edgeMapper';
-import { coreNodeToFlow } from '../../../../../presentation/canvas/mappers/nodeMapper';
+import { ProjectId } from '../../../../core/domain/value-objects/ProjectId';
+import { getServerSession } from '../../../../infrastructure/auth/nextauth/getServerSession';
+import { prisma } from '../../../../infrastructure/persistence/prisma/client';
+import { PrismaEdgeRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaEdgeRepository';
+import { PrismaNodeRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaNodeRepository';
+import { PrismaProjectRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaProjectRepository';
+import { CanvasInitializer } from '../../../../presentation/canvas/CanvasInitializer';
+import { coreEdgeToFlow } from '../../../../presentation/canvas/mappers/edgeMapper';
+import { coreNodeToFlow } from '../../../../presentation/canvas/mappers/nodeMapper';
 
 type ProjectPageProps = {
   params: {
@@ -17,6 +17,8 @@ type ProjectPageProps = {
 };
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
+  const { id } = await params;
+
   const session = await getServerSession();
 
   if (!session?.user?.id) {
@@ -26,10 +28,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   let projectId: ProjectId;
 
   try {
-    projectId = ProjectId.from(params.id);
+    projectId = ProjectId.from(id);
   } catch {
     notFound();
   }
+
   const projectRepository = new PrismaProjectRepository(prisma);
   const nodeRepository = new PrismaNodeRepository(prisma);
   const edgeRepository = new PrismaEdgeRepository(prisma);
@@ -47,8 +50,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   return (
     <CanvasInitializer
-      projectId={params.id}
-      initialNodes={nodes.map((node) => coreNodeToFlow(node, params.id))}
+      projectId={id}
+      initialNodes={nodes.map((node) => coreNodeToFlow(node, id))}
       initialEdges={edges.map((edge) => coreEdgeToFlow(edge))}
     />
   );

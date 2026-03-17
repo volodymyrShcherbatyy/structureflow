@@ -1,42 +1,62 @@
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import { PrismaAdapter } from '@auth/prisma-adapter';
 import { NextAuthOptions } from 'next-auth';
 import EmailProvider from 'next-auth/providers/email';
 import GoogleProvider from 'next-auth/providers/google';
-
+import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from '../../persistence/prisma/client';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-    }),
-    EmailProvider({
-      server: {
-        host: process.env.EMAIL_SERVER_HOST,
-        port: Number(process.env.EMAIL_SERVER_PORT ?? 587),
-        auth: {
-          user: process.env.EMAIL_SERVER_USER,
-          pass: process.env.EMAIL_SERVER_PASSWORD,
-        },
+
+  secret: process.env.NEXTAUTH_SECRET,
+
+    providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" }
       },
-      from: process.env.EMAIL_FROM,
-    }),
+
+      async authorize(credentials) {
+        if (!credentials) return null
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        })
+
+        if (!user) return null
+
+        // DEV режим — пароль не перевіряємо
+        if (credentials.password === "test") {
+          return user
+        }
+
+        return null
+      }
+    })
   ],
+
   session: {
-    strategy: 'database',
+    strategy: 'jwt',
   },
   pages: {
     signIn: '/signin',
   },
+  
   callbacks: {
-    session: ({ session, user }) => {
-      if (session.user) {
-        session.user.id = user.id;
-      }
-
-      return session;
-    },
+  async jwt({ token, user }) {
+    if (user) {
+      token.id = user.id
+    }
+    return token
   },
+
+  async session({ session, token }) {
+    if (session.user) {
+      session.user.id = token.id
+    }
+    return session
+  }
+},
 };

@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 14, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/i9/projects/structureflow/src/app/page.tsx"],"sourcesContent":["export default function HomePage() {\r\n  return <main>Home</main>\r\n}"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,qBAAO,8OAAC;kBAAK;;;;;;AACf"}}]
+}
