@@ -13,6 +13,7 @@ const NODE_TYPES = ['system', 'container', 'component', 'page', 'external'] as c
 export function NodePalette() {
   const addNode = useCanvasStore((state) => state.addNode);
   const projectId = useScopeStore((state) => state.projectId);
+  const currentScopeId = useScopeStore((state) => state.currentScopeId);
 
   const handleCreateNode = (type: (typeof NODE_TYPES)[number]) => {
     if (!projectId) {
@@ -25,6 +26,7 @@ export function NodePalette() {
       label: `${type} node`,
       description: '',
       position: Position.from(Math.floor(Math.random() * 260), Math.floor(Math.random() * 260)),
+      parentId: currentScopeId ? NodeId.from(currentScopeId) : undefined,
     });
 
     addNode(coreNodeToFlow(coreNode, projectId));

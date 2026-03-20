@@ -51,6 +51,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   return (
     <CanvasInitializer
       projectId={id}
+      projectName={project.name}
       initialNodes={nodes.map((node) => coreNodeToFlow(node, id))}
       initialEdges={edges.map((edge) => coreEdgeToFlow(edge))}
     />

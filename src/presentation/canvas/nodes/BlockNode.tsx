@@ -1,10 +1,11 @@
 'use client';
 
 import { Handle, NodeProps, Position } from '@xyflow/react';
-import { KeyboardEvent, useState } from 'react';
+import { KeyboardEvent, MouseEvent, useMemo, useState } from 'react';
 
 import { FlowNodeData } from '../mappers/nodeMapper';
 import { useCanvasStore } from '../../stores/canvasStore';
+import { useScopeStore } from '../../stores/scopeStore';
 
 const TYPE_COLORS: Record<string, { header: string; border: string; background: string }> = {
   system: { header: '#1d4ed8', border: '#93c5fd', background: '#eff6ff' },
@@ -15,11 +16,14 @@ const TYPE_COLORS: Record<string, { header: string; border: string; background: 
 };
 
 export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
+  const nodes = useCanvasStore((state) => state.nodes);
   const updateNodeLabel = useCanvasStore((state) => state.updateNodeLabel);
+  const drillInto = useScopeStore((state) => state.drillInto);
   const [editing, setEditing] = useState(false);
   const [draftLabel, setDraftLabel] = useState(data.label);
 
   const color = TYPE_COLORS[data.nodeType] ?? TYPE_COLORS.external;
+  const hasChildren = useMemo(() => nodes.some((node) => node.parentId === id), [id, nodes]);
 
   const commitLabel = () => {
     const trimmed = draftLabel.trim();
@@ -45,8 +49,22 @@ export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
     }
   };
 
+  const handleLabelDoubleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setEditing(true);
+  };
+
+  const handleNodeDoubleClick = () => {
+    if (!hasChildren || editing) {
+      return;
+    }
+
+    drillInto(id, data.label);
+  };
+
   return (
     <div
+      onDoubleClick={handleNodeDoubleClick}
       style={{
         minWidth: 180,
         border: `1px solid ${color.border}`,
@@ -54,6 +72,7 @@ export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
         overflow: 'hidden',
         background: color.background,
         boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+        cursor: hasChildren ? 'zoom-in' : 'default',
       }}
     >
       <Handle type="target" position={Position.Top} />
@@ -93,7 +112,7 @@ export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
         ) : (
           <button
             type="button"
-            onDoubleClick={() => setEditing(true)}
+            onDoubleClick={handleLabelDoubleClick}
             style={{
               border: 'none',
               background: 'transparent',
@@ -109,6 +128,9 @@ export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
         )}
 
         {data.description ? <p style={{ margin: 0, fontSize: 12 }}>{data.description}</p> : null}
+        {hasChildren ? (
+          <p style={{ margin: 0, fontSize: 11, color: '#4b5563' }}>⊕ double click to open</p>
+        ) : null}
       </div>
     </div>
   );
