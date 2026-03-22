@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useScopeStore } from '../stores/scopeStore';
 
 export function Breadcrumb() {
@@ -23,6 +25,17 @@ export function Breadcrumb() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <Link
+          href="/dashboard"
+          style={{
+            color: '#2563eb',
+            textDecoration: 'none',
+            fontWeight: 600,
+          }}
+        >
+          ← Проєкти
+        </Link>
+
         <button
           type="button"
           onClick={resetScope}
