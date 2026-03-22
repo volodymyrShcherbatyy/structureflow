@@ -1,7 +1,7 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 
 import { ProjectId } from '../../../../core/domain/value-objects/ProjectId';
-import { getServerSession } from '../../../../infrastructure/auth/nextauth/getServerSession';
+import { getUserId } from '../../../../infrastructure/auth/getUserId';
 import { prisma } from '../../../../infrastructure/persistence/prisma/client';
 import { PrismaEdgeRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaEdgeRepository';
 import { PrismaNodeRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaNodeRepository';
@@ -19,11 +19,7 @@ type ProjectPageProps = {
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { id } = await params;
 
-  const session = await getServerSession();
-
-  if (!session?.user?.id) {
-    redirect('/signin');
-  }
+  const userId = await getUserId();
 
   let projectId: ProjectId;
 
@@ -39,7 +35,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   const project = await projectRepository.findById(projectId);
 
-  if (!project || project.ownerId !== session.user.id) {
+  if (!project || project.ownerId !== userId) {
     notFound();
   }
 
