@@ -6,6 +6,7 @@ import { Background, Controls, MiniMap, ReactFlow, useReactFlow } from '@xyflow/
 import { useEffect, useMemo } from 'react';
 
 import { EdgeTypeSelector } from './edges/EdgeTypeSelector';
+import { SaveStatusIndicator } from './SaveStatusIndicator';
 import { nodeTypes } from './nodeTypes';
 import { NodePalette } from '../sidebar/NodePalette';
 import { useCanvasStore } from '../stores/canvasStore';
@@ -18,8 +19,6 @@ function FlowCanvasContent() {
     onNodesChange,
     onEdgesChange,
     onConnect,
-    removeNode,
-    removeEdge,
     pendingConnection,
     setPendingConnection,
     addTypedEdgeFromPending,
@@ -80,11 +79,39 @@ function FlowCanvasContent() {
       <NodePalette />
 
       <div style={{ flex: 1, position: 'relative' }}>
+        <SaveStatusIndicator />
+
         {pendingConnection ? (
           <EdgeTypeSelector
             onSelect={(edgeType) => addTypedEdgeFromPending(edgeType)}
             onCancel={() => setPendingConnection(null)}
           />
+        ) : null}
+
+        {currentScopeId && visibleNodes.length === 0 ? (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'grid',
+              placeItems: 'center',
+              zIndex: 5,
+              pointerEvents: 'none',
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                padding: '10px 14px',
+                borderRadius: 10,
+                border: '1px solid #d1d5db',
+                background: '#ffffffd9',
+                color: '#4b5563',
+              }}
+            >
+              This scope is empty. Add a node from the palette to start nesting.
+            </p>
+          </div>
         ) : null}
 
         <ReactFlow
@@ -93,12 +120,6 @@ function FlowCanvasContent() {
           onNodesChange={onNodesChange as never}
           onEdgesChange={onEdgesChange as never}
           onConnect={onConnect}
-          onNodesDelete={(deletedNodes) => {
-            deletedNodes.forEach((node) => removeNode(node.id));
-          }}
-          onEdgesDelete={(deletedEdges) => {
-            deletedEdges.forEach((edge) => removeEdge(edge.id));
-          }}
           nodeTypes={nodeTypes}
           fitView
           deleteKeyCode={['Backspace', 'Delete']}

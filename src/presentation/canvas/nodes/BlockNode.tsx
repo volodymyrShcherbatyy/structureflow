@@ -18,6 +18,7 @@ const TYPE_COLORS: Record<string, { header: string; border: string; background: 
 export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
   const nodes = useCanvasStore((state) => state.nodes);
   const updateNodeLabel = useCanvasStore((state) => state.updateNodeLabel);
+  const addPendingChange = useCanvasStore((state) => state.addPendingChange);
   const drillInto = useScopeStore((state) => state.drillInto);
   const [editing, setEditing] = useState(false);
   const [draftLabel, setDraftLabel] = useState(data.label);
@@ -34,7 +35,11 @@ export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
       return;
     }
 
-    updateNodeLabel(id, trimmed);
+    if (trimmed !== data.label) {
+      updateNodeLabel(id, trimmed);
+      addPendingChange({ type: 'rename', nodeId: id, label: trimmed });
+    }
+
     setEditing(false);
   };
 
@@ -55,7 +60,7 @@ export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
   };
 
   const handleNodeDoubleClick = () => {
-    if (!hasChildren || editing) {
+    if (editing) {
       return;
     }
 
@@ -72,7 +77,7 @@ export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
         overflow: 'hidden',
         background: color.background,
         boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-        cursor: hasChildren ? 'zoom-in' : 'default',
+        cursor: 'zoom-in',
       }}
     >
       <Handle type="target" position={Position.Top} />
@@ -128,9 +133,9 @@ export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
         )}
 
         {data.description ? <p style={{ margin: 0, fontSize: 12 }}>{data.description}</p> : null}
-        {hasChildren ? (
-          <p style={{ margin: 0, fontSize: 11, color: '#4b5563' }}>⊕ double click to open</p>
-        ) : null}
+        <p style={{ margin: 0, fontSize: 11, color: '#4b5563' }}>
+          {hasChildren ? '⊕ double click to open' : '⊕ double click to open empty scope'}
+        </p>
       </div>
     </div>
   );

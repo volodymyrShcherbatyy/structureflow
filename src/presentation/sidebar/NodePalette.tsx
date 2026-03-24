@@ -1,10 +1,6 @@
 'use client';
 
-import { Node as CoreNode } from '../../core/domain/entities/Node';
-import { NodeId } from '../../core/domain/value-objects/NodeId';
-import { NodeType } from '../../core/domain/value-objects/NodeType';
-import { Position } from '../../core/domain/value-objects/Position';
-import { coreNodeToFlow } from '../canvas/mappers/nodeMapper';
+import { addNodeAction } from '../../app/(protected)/project/[id]/actions';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useScopeStore } from '../stores/scopeStore';
 
@@ -15,21 +11,22 @@ export function NodePalette() {
   const projectId = useScopeStore((state) => state.projectId);
   const currentScopeId = useScopeStore((state) => state.currentScopeId);
 
-  const handleCreateNode = (type: (typeof NODE_TYPES)[number]) => {
+  const handleCreateNode = async (type: (typeof NODE_TYPES)[number]) => {
     if (!projectId) {
       return;
     }
 
-    const coreNode = new CoreNode({
-      id: NodeId.create(),
-      type: NodeType.from(type),
+    const { node } = await addNodeAction({
+      projectId,
+      type,
       label: `${type} node`,
       description: '',
-      position: Position.from(Math.floor(Math.random() * 260), Math.floor(Math.random() * 260)),
-      parentId: currentScopeId ? NodeId.from(currentScopeId) : undefined,
+      x: Math.floor(Math.random() * 260),
+      y: Math.floor(Math.random() * 260),
+      parentId: currentScopeId ?? undefined,
     });
 
-    addNode(coreNodeToFlow(coreNode, projectId));
+    addNode(node);
   };
 
   return (
@@ -47,7 +44,7 @@ export function NodePalette() {
         <button
           key={type}
           type="button"
-          onClick={() => handleCreateNode(type)}
+          onClick={() => void handleCreateNode(type)}
           style={{
             border: '1px solid #d1d5db',
             background: '#fff',
