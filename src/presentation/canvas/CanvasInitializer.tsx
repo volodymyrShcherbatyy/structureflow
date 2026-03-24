@@ -3,9 +3,10 @@
 import { Edge, Node, ReactFlowProvider } from '@xyflow/react';
 import { useEffect } from 'react';
 
+import { FlowCanvas } from './FlowCanvas';
+import { useAutosave } from './hooks/useAutosave';
 import { FlowEdgeData } from './mappers/edgeMapper';
 import { FlowNodeData } from './mappers/nodeMapper';
-import { FlowCanvas } from './FlowCanvas';
 import { Breadcrumb } from '../navigation/Breadcrumb';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useScopeStore } from '../stores/scopeStore';
@@ -16,6 +17,17 @@ type CanvasInitializerProps = {
   initialNodes: Node<FlowNodeData>[];
   initialEdges: Edge<FlowEdgeData>[];
 };
+
+function CanvasContent() {
+  useAutosave();
+
+  return (
+    <div style={{ display: 'grid', gridTemplateRows: 'auto 1fr', minHeight: '100vh' }}>
+      <Breadcrumb />
+      <FlowCanvas />
+    </div>
+  );
+}
 
 export function CanvasInitializer({
   projectId,
@@ -36,10 +48,7 @@ export function CanvasInitializer({
 
   return (
     <ReactFlowProvider>
-      <div style={{ display: 'grid', gridTemplateRows: 'auto 1fr', minHeight: '100vh' }}>
-        <Breadcrumb />
-        <FlowCanvas />
-      </div>
+      <CanvasContent />
     </ReactFlowProvider>
   );
 }

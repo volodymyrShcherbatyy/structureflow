@@ -1,4 +1,10 @@
-import { addEdge as addFlowEdge, applyEdgeChanges, applyNodeChanges } from '@xyflow/react';
+import {
+  addEdge as addFlowEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  EdgeChange,
+  NodeChange,
+} from '@xyflow/react';
 import { create } from 'zustand';
 
 import { FlowEdgeData } from '../canvas/mappers/edgeMapper';
@@ -26,37 +32,99 @@ type PendingConnection = {
   target: string;
 };
 
+export type PendingChange =
+  | { type: 'move'; nodeId: string; x: number; y: number }
+  | { type: 'rename'; nodeId: string; label: string }
+  | { type: 'delete-node'; nodeId: string }
+  | {
+      type: 'connect-edge';
+      tempEdgeId: string;
+      sourceId: string;
+      targetId: string;
+      edgeType: string;
+      label?: string;
+    }
+  | { type: 'delete-edge'; edgeId: string };
+
 type CanvasStore = {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
   pendingConnection: PendingConnection | null;
+  pendingChanges: PendingChange[];
+  isSaving: boolean;
+  lastSavedAt: Date | null;
   initCanvas: (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
-  onNodesChange: (changes: unknown[]) => void;
-  onEdgesChange: (changes: unknown[]) => void;
+  onNodesChange: (changes: NodeChange[]) => void;
+  onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: { source: string | null; target: string | null }) => void;
   addNode: (node: CanvasNode) => void;
   removeNode: (nodeId: string) => void;
   addEdge: (edge: CanvasEdge) => void;
   removeEdge: (edgeId: string) => void;
+  replaceEdgeId: (tempEdgeId: string, edgeId: string) => void;
   updateNodePosition: (nodeId: string, x: number, y: number) => void;
   updateNodeLabel: (nodeId: string, label: string) => void;
   setPendingConnection: (pendingConnection: PendingConnection | null) => void;
   addTypedEdgeFromPending: (edgeType: string) => void;
+  addPendingChange: (change: PendingChange) => void;
+  clearPendingChanges: () => void;
+  setSaving: (isSaving: boolean) => void;
+  markSaved: () => void;
 };
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
   nodes: [],
   edges: [],
   pendingConnection: null,
-  initCanvas: (nodes, edges) => set({ nodes, edges }),
+  pendingChanges: [],
+  isSaving: false,
+  lastSavedAt: null,
+  initCanvas: (nodes, edges) =>
+    set({
+      nodes,
+      edges,
+      pendingChanges: [],
+      pendingConnection: null,
+      isSaving: false,
+      lastSavedAt: null,
+    }),
   onNodesChange: (changes) =>
-    set((state) => ({
-      nodes: applyNodeChanges(changes as never, state.nodes as never) as CanvasNode[],
-    })),
+    set((state) => {
+      const nextNodes = applyNodeChanges(changes as never, state.nodes as never) as CanvasNode[];
+
+      changes.forEach((change) => {
+        if (change.type === 'position' && change.dragging === false && change.position) {
+          get().addPendingChange({
+            type: 'move',
+            nodeId: change.id,
+            x: change.position.x,
+            y: change.position.y,
+          });
+        }
+
+        if (change.type === 'remove') {
+          get().addPendingChange({ type: 'delete-node', nodeId: change.id });
+        }
+      });
+
+      return {
+        nodes: nextNodes,
+      };
+    }),
   onEdgesChange: (changes) =>
-    set((state) => ({
-      edges: applyEdgeChanges(changes as never, state.edges as never) as CanvasEdge[],
-    })),
+    set((state) => {
+      const nextEdges = applyEdgeChanges(changes as never, state.edges as never) as CanvasEdge[];
+
+      changes.forEach((change) => {
+        if (change.type === 'remove') {
+          get().addPendingChange({ type: 'delete-edge', edgeId: change.id });
+        }
+      });
+
+      return {
+        edges: nextEdges,
+      };
+    }),
   onConnect: (connection) => {
     if (!connection.source || !connection.target) {
       return;
@@ -79,6 +147,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   removeEdge: (edgeId) =>
     set((state) => ({
       edges: state.edges.filter((edge) => edge.id !== edgeId),
+    })),
+  replaceEdgeId: (tempEdgeId, edgeId) =>
+    set((state) => ({
+      edges: state.edges.map((edge) => (edge.id === tempEdgeId ? { ...edge, id: edgeId } : edge)),
+      pendingChanges: state.pendingChanges.map((change) => {
+        if (change.type === 'delete-edge' && change.edgeId === tempEdgeId) {
+          return { ...change, edgeId };
+        }
+
+        return change;
+      }),
     })),
   updateNodePosition: (nodeId, x, y) =>
     set((state) => ({
@@ -133,5 +212,73 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       edges: addFlowEdge(typedEdge as never, edges as never) as CanvasEdge[],
       pendingConnection: null,
     });
+
+    get().addPendingChange({
+      type: 'connect-edge',
+      tempEdgeId: typedEdge.id,
+      sourceId: typedEdge.source,
+      targetId: typedEdge.target,
+      edgeType,
+      label: typedEdge.label,
+    });
   },
+  addPendingChange: (change) =>
+    set((state) => {
+      if (change.type === 'move') {
+        const filtered = state.pendingChanges.filter(
+          (pending) => !(pending.type === 'move' && pending.nodeId === change.nodeId),
+        );
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
+
+      if (change.type === 'rename') {
+        const filtered = state.pendingChanges.filter(
+          (pending) => !(pending.type === 'rename' && pending.nodeId === change.nodeId),
+        );
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
+
+      if (change.type === 'delete-node') {
+        const filtered = state.pendingChanges.filter((pending) => {
+          if ('nodeId' in pending && pending.nodeId === change.nodeId) {
+            return false;
+          }
+
+          if (pending.type === 'connect-edge') {
+            return pending.sourceId !== change.nodeId && pending.targetId !== change.nodeId;
+          }
+
+          return true;
+        });
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
+
+      if (change.type === 'delete-edge') {
+        const pendingConnect = state.pendingChanges.find(
+          (pending) => pending.type === 'connect-edge' && pending.tempEdgeId === change.edgeId,
+        );
+
+        if (pendingConnect) {
+          return {
+            pendingChanges: state.pendingChanges.filter((pending) => pending !== pendingConnect),
+          };
+        }
+      }
+
+      return {
+        pendingChanges: [...state.pendingChanges, change],
+      };
+    }),
+  clearPendingChanges: () => set({ pendingChanges: [] }),
+  setSaving: (isSaving) => set({ isSaving }),
+  markSaved: () => set({ isSaving: false, lastSavedAt: new Date() }),
 }));
