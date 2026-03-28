@@ -19,7 +19,12 @@ import { coreNodeToFlow } from '../../../../presentation/canvas/mappers/nodeMapp
 async function assertOwnership(projectId: string) {
   const userId = await getUserId();
   const projectRepository = new PrismaProjectRepository(prisma);
-  const project = await projectRepository.findById(ProjectId.from(projectId));
+  const projectIdVO =
+  typeof projectId === 'string'
+    ? ProjectId.from(projectId)
+    : projectId;
+
+  const project = await projectRepository.findById(projectIdVO);
 
   if (!project || project.ownerId !== userId) {
     throw new Error('You do not have access to this project.');
@@ -46,7 +51,8 @@ export async function addNodeAction(input: AddNodeInput) {
   const { nodeRepository, projectRepository } = await assertOwnership(input.projectId);
   const addNode = new AddNode(projectRepository, nodeRepository);
   const nestNode = new NestNode(nodeRepository);
-  const { node } = await addNode.execute({
+
+    const { node } = await addNode.execute({
     projectId: input.projectId,
     type: input.type,
     label: input.label,

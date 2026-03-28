@@ -1,10 +1,10 @@
 export type NodeTypeValue = 'system' | 'container' | 'component' | 'page' | 'external';
 
 const ALLOWED_CHILDREN: Record<NodeTypeValue, ReadonlyArray<NodeTypeValue>> = {
-  system: ['container', 'external'],
-  container: ['component', 'page'],
-  component: [],
-  page: [],
+  system: ['container', 'component', 'page', 'external'],
+  container: ['component', 'page', 'external'],
+  component: ['page', 'external'],
+  page: ['external'],
   external: [],
 };
 

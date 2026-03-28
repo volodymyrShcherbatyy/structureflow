@@ -37,9 +37,9 @@ export class PrismaEdgeRepository implements IEdgeRepository {
     return records.map((record) => EdgeMapper.toDomain(record));
   }
 
-  async save(edge: Edge, projectId: ProjectId): Promise<void> {
+  async save(edge: Edge): Promise<void> {
     await this.prisma.edge.create({
-      data: EdgeMapper.toPrismaCreate(edge, projectId.value),
+      data: EdgeMapper.toPrismaCreate(edge),
     });
   }
 

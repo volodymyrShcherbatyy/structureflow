@@ -42,6 +42,7 @@ export class ConnectNodes {
       type: EdgeType.from(input.type),
       sourceId,
       targetId,
+      projectId: source.projectId, // 🔥 КЛЮЧОВЕ
       label: input.label,
     });
 
