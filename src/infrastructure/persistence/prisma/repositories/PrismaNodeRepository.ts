@@ -25,20 +25,20 @@ export class PrismaNodeRepository implements INodeRepository {
     return records.map((record) => NodeMapper.toDomain(record));
   }
 
-  async save(node: Node, projectId: ProjectId): Promise<void> {
+  async save(node: Node): Promise<void> {
     await this.prisma.node.upsert({
       where: { id: node.id.value },
-      create: NodeMapper.toPrismaCreate(node, projectId.value),
+      create: NodeMapper.toPrismaCreate(node, node.projectId.value),
       update: NodeMapper.toPrismaUpdate(node),
     });
   }
 
-  async saveMany(nodes: Node[], projectId: ProjectId): Promise<void> {
+  async saveMany(nodes: Node[]): Promise<void> {
     await this.prisma.$transaction(
       nodes.map((node) =>
         this.prisma.node.upsert({
           where: { id: node.id.value },
-          create: NodeMapper.toPrismaCreate(node, projectId.value),
+          create: NodeMapper.toPrismaCreate(node, node.projectId.value),
           update: NodeMapper.toPrismaUpdate(node),
         }),
       ),
