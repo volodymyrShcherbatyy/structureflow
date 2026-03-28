@@ -1,9 +1,12 @@
-export async function getUserId(): Promise<string> {
-  const userId = process.env.DEV_USER_ID;
+import { getServerSession } from './nextauth/getServerSession'
+import { redirect } from 'next/navigation'
 
-  if (!userId) {
-    throw new Error('DEV_USER_ID is not configured');
+export async function getUserId(): Promise<string> {
+  const session = await getServerSession()
+
+  if (!session?.user?.id) {
+    redirect('/signin')
   }
 
-  return userId;
+  return session.user.id
 }

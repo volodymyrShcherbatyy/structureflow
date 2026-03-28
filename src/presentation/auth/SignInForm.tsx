@@ -2,37 +2,76 @@
 
 import { signIn } from "next-auth/react"
 import { useState } from "react"
+import Link from "next/link"
 
 export function SignInForm() {
-  const [email, setEmail] = useState("test@test.com")
-  const [password, setPassword] = useState("test")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError(null)
+    setLoading(true)
 
-    await signIn("credentials", {
+    const result = await signIn("credentials", {
       email,
       password,
-      callbackUrl: "/dashboard"
+      redirect: false,
     })
+
+    if (result?.error) {
+      setError("Невірний email або пароль")
+      setLoading(false)
+      return
+    }
+
+    window.location.href = "/dashboard"
+  }
+
+  function handleGoogleLogin() {
+    signIn("google", { callbackUrl: "/dashboard" })
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        placeholder="email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-      />
+    <div style={{ width: 300, display: "flex", flexDirection: "column", gap: 12 }}>
+      
+      <button onClick={handleGoogleLogin}>
+        Увійти через Google
+      </button>
 
-      <input
-        placeholder="password"
-        type="password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-      />
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <input
+          placeholder="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+        />
 
-      <button type="submit">Login</button>
-    </form>
+        <input
+          placeholder="password"
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+        />
+
+        {error && (
+          <div style={{ color: "red", fontSize: 12 }}>
+            {error}
+          </div>
+        )}
+
+        <button type="submit" disabled={loading}>
+          {loading ? "Входимо..." : "Login"}
+        </button>
+
+        <div style={{ fontSize: 12, textAlign: "center", marginTop: 8 }}>
+          Немає акаунту?{" "}
+          <Link href="/signup" style={{ color: "#2563eb" }}>
+            Зареєструватись
+          </Link>
+        </div>
+      </form>
+    </div>
   )
 }

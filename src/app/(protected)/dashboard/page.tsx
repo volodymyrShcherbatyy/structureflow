@@ -5,9 +5,12 @@ import { CreateProjectButton } from '../../../presentation/dashboard/CreateProje
 import { EmptyState } from '../../../presentation/dashboard/EmptyState';
 import { ProjectGrid } from '../../../presentation/dashboard/ProjectGrid';
 import type { DashboardProjectDto } from '../../../presentation/dashboard/types';
+import { getServerSession } from '../../../infrastructure/auth/nextauth/getServerSession'
+import { LogoutButton } from '../../../presentation/auth/LogoutButton'
 
 export default async function DashboardPage() {
   const userId = await getUserId();
+  const session = await getServerSession()   // ← ДОДАТИ
   const projectRepository = new PrismaProjectRepository(prisma);
   const projects = await projectRepository.findAllByOwner(userId);
   const projectDtos: DashboardProjectDto[] = projects
@@ -41,7 +44,15 @@ export default async function DashboardPage() {
             <h1 style={{ margin: '6px 0 0', color: '#0f172a', fontSize: 32 }}>StructureFlow</h1>
           </div>
 
-          <CreateProjectButton />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 12, color: '#64748b' }}>
+              {session?.user?.email}
+            </span>
+
+            <LogoutButton />
+
+            <CreateProjectButton />
+          </div>
         </header>
 
         {projectDtos.length === 0 ? <EmptyState /> : <ProjectGrid projects={projectDtos} />}
