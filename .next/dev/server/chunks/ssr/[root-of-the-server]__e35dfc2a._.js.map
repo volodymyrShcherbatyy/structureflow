@@ -2,5 +2,5 @@
   "version": 3,
   "sources": [],
   "sections": [
-    {"offset": {"line": 14, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/i9/projects/structureflow/src/app/page.tsx"],"sourcesContent":["export default function HomePage() {\r\n  return <main>Home</main>\r\n}"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,qBAAO,8OAAC;kBAAK;;;;;;AACf"}}]
+    {"offset": {"line": 14, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/i9/projects/structureflow/src/app/page.tsx"],"sourcesContent":["import { redirect } from 'next/navigation';\r\n\r\nexport default function HomePage() {\r\n  redirect('/dashboard');\r\n}\r\n"],"names":[],"mappings":";;;;AAAA;AAAA;;AAEe,SAAS;IACtB,IAAA,iMAAQ,EAAC;AACX"}}]
 }

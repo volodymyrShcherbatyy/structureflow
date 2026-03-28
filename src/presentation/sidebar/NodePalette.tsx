@@ -11,6 +11,14 @@ export function NodePalette() {
   const projectId = useScopeStore((state) => state.projectId);
   const currentScopeId = useScopeStore((state) => state.currentScopeId);
 
+  const nodes = useCanvasStore((state) => state.nodes);
+
+  const parentNode = currentScopeId
+    ? nodes.find((n) => n.id === currentScopeId)
+    : null;
+
+  const parentType = parentNode?.data.nodeType ?? null;
+
   const handleCreateNode = async (type: (typeof NODE_TYPES)[number]) => {
     if (!projectId) {
       return;
@@ -29,6 +37,16 @@ export function NodePalette() {
     addNode(node);
   };
 
+  const ALLOWED_CHILDREN: Record<string, string[]> = {
+  system: ['container', 'component', 'page', 'external'],
+  container: ['component', 'page', 'external'],
+  component: ['page', 'external'],
+  page: ['external'],
+  external: [],
+};
+
+  const allowedTypes = parentType ? ALLOWED_CHILDREN[parentType] ?? [] : ['system']; // root level
+
   return (
     <aside
       style={{
@@ -40,22 +58,33 @@ export function NodePalette() {
       }}
     >
       <strong style={{ fontSize: 12, textTransform: 'uppercase' }}>Node palette</strong>
-      {NODE_TYPES.map((type) => (
-        <button
-          key={type}
-          type="button"
-          onClick={() => void handleCreateNode(type)}
-          style={{
-            border: '1px solid #d1d5db',
-            background: '#fff',
-            borderRadius: 8,
-            padding: '8px 10px',
-            textAlign: 'left',
-          }}
-        >
-          {type[0].toUpperCase() + type.slice(1)}
-        </button>
-      ))}
+      {allowedTypes.map((type) => {
+        const typed = type as (typeof NODE_TYPES)[number];
+
+        return (
+          <button
+            key={type}
+            type="button"
+            onClick={() => void handleCreateNode(typed)}
+            style={{
+              border: '1px solid #d1d5db',
+              background: '#fff',
+              borderRadius: 8,
+              padding: '8px 10px',
+              textAlign: 'left',
+            }}
+          >
+            {type[0].toUpperCase() + type.slice(1)}
+          </button>
+        );
+      })}
+
+      {allowedTypes.length === 0 && (
+        <p style={{ fontSize: 12, color: '#9ca3af' }}>
+          This node cannot contain children
+        </p>
+      )}
+
     </aside>
   );
 }

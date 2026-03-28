@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/i9/projects/structureflow/src/infrastructure/auth/getUserId.ts"],"sourcesContent":["export async function getUserId(): Promise<string> {\r\n  const userId = process.env.DEV_USER_ID;\r\n\r\n  if (!userId) {\r\n    throw new Error('DEV_USER_ID is not configured');\r\n  }\r\n\r\n  return userId;\r\n}\r\n"],"names":[],"mappings":";;;;AAAO,eAAe;IACpB,MAAM,SAAS,QAAQ,GAAG,CAAC,WAAW;IAEtC,IAAI,CAAC,QAAQ;QACX,MAAM,IAAI,MAAM;IAClB;IAEA,OAAO;AACT"}},
+    {"offset": {"line": 19, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/i9/projects/structureflow/src/app/%28protected%29/layout.tsx"],"sourcesContent":["export const dynamic = 'force-dynamic';\r\n\r\nimport { ReactNode } from 'react';\r\n\r\nimport { getUserId } from '../../infrastructure/auth/getUserId';\r\n\r\ntype ProtectedLayoutProps = {\r\n  children: ReactNode;\r\n};\r\n\r\nexport default async function ProtectedLayout({ children }: ProtectedLayoutProps) {\r\n  await getUserId();\r\n\r\n  return children;\r\n}\r\n"],"names":[],"mappings":";;;;;;AAIA;AAJO,MAAM,UAAU;;AAUR,eAAe,gBAAgB,EAAE,QAAQ,EAAwB;IAC9E,MAAM,IAAA,uJAAS;IAEf,OAAO;AACT"}}]
+}

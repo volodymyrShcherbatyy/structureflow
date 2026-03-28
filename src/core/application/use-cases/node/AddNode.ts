@@ -35,6 +35,7 @@ export class AddNode {
     }
 
     const node = new Node({
+      projectId,
       id: NodeId.create(),
       type: NodeType.from(input.type),
       label: input.label,
@@ -42,7 +43,7 @@ export class AddNode {
       position: Position.from(input.x ?? 0, input.y ?? 0),
     });
 
-    await this.nodeRepository.save(node);
+    await this.nodeRepository.save(node, projectId);
 
     return { node };
   }

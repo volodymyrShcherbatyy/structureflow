@@ -2,6 +2,7 @@ import { InvalidNestingError } from '../errors/InvalidNestingError';
 import { NodeId } from '../value-objects/NodeId';
 import { NodeType } from '../value-objects/NodeType';
 import { Position } from '../value-objects/Position';
+import { ProjectId } from '../value-objects/ProjectId';
 
 export type NodeProps = {
   id: NodeId;
@@ -9,6 +10,7 @@ export type NodeProps = {
   label: string;
   description?: string;
   position: Position;
+  projectId: ProjectId; // ✅ NEW
   parentId?: NodeId;
 };
 
@@ -18,6 +20,7 @@ export class Node {
   public readonly label: string;
   public readonly description?: string;
   public readonly position: Position;
+  public readonly projectId: ProjectId; // ✅ NEW
   public readonly parentId?: NodeId;
 
   constructor(props: NodeProps) {
@@ -26,6 +29,7 @@ export class Node {
     this.label = props.label;
     this.description = props.description;
     this.position = props.position;
+    this.projectId = props.projectId; // ✅ NEW
     this.parentId = props.parentId;
   }
 
