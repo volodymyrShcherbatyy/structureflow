@@ -15,7 +15,7 @@ const TYPE_COLORS: Record<string, { header: string; border: string; background: 
   external: { header: '#374151', border: '#d1d5db', background: '#f9fafb' },
 };
 
-export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
+export function BlockNode({ id, data, selected }: NodeProps<FlowNodeData>) {
   const nodes = useCanvasStore((state) => state.nodes);
   const updateNodeLabel = useCanvasStore((state) => state.updateNodeLabel);
   const addPendingChange = useCanvasStore((state) => state.addPendingChange);
@@ -72,19 +72,29 @@ export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
       onDoubleClick={handleNodeDoubleClick}
       style={{
         minWidth: 180,
-        border: `1px solid ${color.border}`,
+        border: selected
+          ? '2px solid #6366f1'
+          : `1px solid ${color.border}`,
         borderRadius: 10,
-        overflow: 'hidden',
+        overflow: 'visible', // ← одразу підготуємо для handles
         background: color.background,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+        boxShadow: selected
+          ? '0 4px 12px rgba(99,102,241,0.25)'
+          : '0 1px 3px rgba(0,0,0,0.08)',
         cursor: 'zoom-in',
+        transform: selected ? 'scale(1.02)' : 'scale(1)',
+        transition: 'all 0.15s ease',
       }}
     >
-      <Handle type="target" position={Position.Top} />
-      <Handle type="target" position={Position.Left} />
-      <Handle type="source" position={Position.Bottom} />
-      <Handle type="source" position={Position.Right} />
-
+      <Handle id="top" type="target" position={Position.Top} 
+        style={{ width: 10, height: 10, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
+      <Handle id="left" type="target" position={Position.Left} 
+        style={{ width: 10, height: 10, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
+      <Handle id="bottom" type="source" position={Position.Bottom} 
+        style={{ width: 10, height: 10, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
+      <Handle id="right" type="source" position={Position.Right} 
+        style={{ width: 10, height: 10, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
+        
       <header
         style={{
           background: color.header,
@@ -134,7 +144,7 @@ export function BlockNode({ id, data }: NodeProps<FlowNodeData>) {
 
         {data.description ? <p style={{ margin: 0, fontSize: 12 }}>{data.description}</p> : null}
         <p style={{ margin: 0, fontSize: 11, color: '#4b5563' }}>
-          {hasChildren ? '⊕ double click to open' : '⊕ double click to open empty scope'}
+          {hasChildren ? 'Double click to open' : 'Empty scope. Double click to open'}
         </p>
       </div>
     </div>

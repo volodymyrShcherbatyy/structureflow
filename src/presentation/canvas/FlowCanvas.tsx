@@ -11,6 +11,7 @@ import { nodeTypes } from './nodeTypes';
 import { NodePalette } from '../sidebar/NodePalette';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useScopeStore } from '../stores/scopeStore';
+import { SelectionMode } from '@xyflow/react';
 
 function FlowCanvasContent() {
   const {
@@ -123,6 +124,9 @@ function FlowCanvasContent() {
           nodeTypes={nodeTypes}
           fitView
           deleteKeyCode={['Backspace', 'Delete']}
+          selectionOnDrag={true}
+          selectionMode={SelectionMode.Partial}
+          multiSelectionKeyCode="Shift"
         >
           <MiniMap />
           <Controls />
