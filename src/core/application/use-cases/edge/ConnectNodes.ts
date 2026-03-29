@@ -11,6 +11,8 @@ export type ConnectNodesInput = {
   targetId: string;
   type: string;
   label?: string;
+  sourceHandle?: string;
+  targetHandle?: string;
 };
 
 export type ConnectNodesOutput = {
@@ -44,6 +46,8 @@ export class ConnectNodes {
       targetId,
       projectId: source.projectId, // 🔥 КЛЮЧОВЕ
       label: input.label,
+      sourceHandle: input.sourceHandle,
+      targetHandle: input.targetHandle,
     });
 
     await this.edgeRepository.save(edge);

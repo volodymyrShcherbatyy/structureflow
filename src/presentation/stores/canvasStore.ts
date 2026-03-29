@@ -46,6 +46,8 @@ export type PendingChange =
       targetId: string;
       edgeType: string;
       label?: string;
+      sourceHandle?: string | null;
+      targetHandle?: string | null;
     }
   | { type: 'delete-edge'; edgeId: string };
 
@@ -227,6 +229,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       targetId: typedEdge.target,
       edgeType,
       label: typedEdge.label,
+      sourceHandle: typedEdge.sourceHandle ?? null,
+      targetHandle: typedEdge.targetHandle ?? null,
     });
   },
   addPendingChange: (change) =>

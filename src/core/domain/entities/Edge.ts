@@ -8,8 +8,10 @@ export type EdgeProps = {
   type: EdgeType;
   sourceId: NodeId;
   targetId: NodeId;
-  projectId: ProjectId; // 🔥 NEW
+  projectId: ProjectId;
   label?: string;
+  sourceHandle?: string;
+  targetHandle?: string;
 };
 
 export class Edge {
@@ -17,8 +19,10 @@ export class Edge {
   public readonly type: EdgeType;
   public readonly sourceId: NodeId;
   public readonly targetId: NodeId;
-  public readonly projectId: ProjectId; // 🔥 NEW
+  public readonly projectId: ProjectId;
   public readonly label?: string;
+  public readonly sourceHandle?: string;
+  public readonly targetHandle?: string;
 
   constructor(props: EdgeProps) {
     if (props.sourceId.equals(props.targetId)) {
@@ -29,8 +33,10 @@ export class Edge {
     this.type = props.type;
     this.sourceId = props.sourceId;
     this.targetId = props.targetId;
-    this.projectId = props.projectId; // 🔥 NEW
+    this.projectId = props.projectId;
     this.label = props.label;
+    this.sourceHandle = props.sourceHandle;
+    this.targetHandle = props.targetHandle;
   }
 
   public relabel(label?: string): Edge {
