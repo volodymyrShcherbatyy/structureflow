@@ -12,6 +12,7 @@ import { NodePalette } from '../sidebar/NodePalette';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useScopeStore } from '../stores/scopeStore';
 import { SelectionMode } from '@xyflow/react';
+import { TreeView } from '../sidebar/TreeView';
 
 function FlowCanvasContent() {
   const {
@@ -76,10 +77,19 @@ function FlowCanvasContent() {
   }, [drillOut, scopeStackLength]);
 
   return (
-    <section style={{ display: 'flex', height: '100%', width: '100%' }}>
+    <section style={{ display: 'flex', height: '100%', width: '100%', minHeight: 0, }}>
+      <TreeView />
       <NodePalette />
 
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div
+        style={{
+          flex: 1,
+          position: 'relative',
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         <SaveStatusIndicator />
 
         {pendingConnection ? (
@@ -115,23 +125,26 @@ function FlowCanvasContent() {
           </div>
         ) : null}
 
-        <ReactFlow
-          nodes={visibleNodes}
-          edges={visibleEdges}
-          onNodesChange={onNodesChange as never}
-          onEdgesChange={onEdgesChange as never}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-          deleteKeyCode={['Backspace', 'Delete']}
-          selectionOnDrag={true}
-          selectionMode={SelectionMode.Partial}
-          multiSelectionKeyCode="Shift"
-        >
-          <MiniMap />
-          <Controls />
-          <Background gap={18} size={1} />
-        </ReactFlow>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <ReactFlow
+            nodes={visibleNodes}
+            edges={visibleEdges}
+            onNodesChange={onNodesChange as never}
+            onEdgesChange={onEdgesChange as never}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            fitView
+            deleteKeyCode={['Backspace', 'Delete']}
+            selectionOnDrag={true}
+            selectionMode={SelectionMode.Partial}
+            multiSelectionKeyCode="Shift"
+          >
+        
+            <MiniMap />
+            <Controls />
+            <Background gap={18} size={1} />
+          </ReactFlow>
+        </div>
       </div>
     </section>
   );

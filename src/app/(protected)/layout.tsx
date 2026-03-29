@@ -11,5 +11,16 @@ type ProtectedLayoutProps = {
 export default async function ProtectedLayout({ children }: ProtectedLayoutProps) {
   await getUserId();
 
-  return children;
+  return (
+    <div
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+      }}
+    >
+      {children}
+    </div>
+);
 }

@@ -12,6 +12,7 @@ type ScopeStore = {
   scopeStack: ScopeLevel[];
   setProjectId: (projectId: string) => void;
   setProjectName: (projectName: string) => void;
+  setScopePath: (path: ScopeLevel[]) => void;
   drillInto: (id: string, label: string) => void;
   drillOut: () => void;
   resetScope: () => void;
@@ -25,6 +26,11 @@ export const useScopeStore = create<ScopeStore>((set) => ({
   scopeStack: [],
   setProjectId: (projectId) => set({ projectId }),
   setProjectName: (projectName) => set({ projectName }),
+  setScopePath: (path) =>
+  set({
+    scopeStack: path,
+    currentScopeId: path.at(-1)?.id ?? null,
+  }),
   drillInto: (id, label) =>
     set((state) => ({
       currentScopeId: id,
