@@ -77,15 +77,14 @@ function FlowCanvasContent() {
     window.addEventListener('keydown', handleKeyDown);
 
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [drillOut, scopeStackLength]);
-
-  
+  }, [drillOut, scopeStackLength]); 
 
   const handleMouseDown = () => {
     isResizing.current = true;
   };
 
   useEffect(() => {
+    
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
 
@@ -113,47 +112,15 @@ function FlowCanvasContent() {
 
 
   return (
-    <section
-      style={{
-        display: 'flex',
-        height: '100%',
-        width: '100%',
-        minHeight: 0,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: sidebarWidth,
-          minWidth: 180,
-          maxWidth: 400,
-          borderRight: '1px solid #e5e7eb',
-          minHeight: 0,
-        }}
-      >
+    <section style={{ display: 'flex', height: '100%', width: '100%', minHeight: 0,}}>
+      <div style={{ display: 'flex', flexDirection: 'column', width: sidebarWidth, minWidth: 180, maxWidth: 400, borderRight: '1px solid #e5e7eb', minHeight: 0,}}>
         <NodePalette />
         <TreeView />
       </div>
 
-      <div
-        onMouseDown={handleMouseDown}
-        style={{
-          width: 4,
-          cursor: 'col-resize',
-          background: '#e5e7eb',
-        }}
-      />
+      <div onMouseDown={handleMouseDown} style={{ width: 4, cursor: 'col-resize', background: '#e5e7eb', }}/>
 
-      <div
-        style={{
-          flex: 1,
-          position: 'relative',
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      <div style={{ flex: 1, position: 'relative', minHeight: 0, display: 'flex', flexDirection: 'column', }}>
         <SaveStatusIndicator />
 
         {pendingConnection ? (
@@ -164,26 +131,8 @@ function FlowCanvasContent() {
         ) : null}
 
         {currentScopeId && visibleNodes.length === 0 ? (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'grid',
-              placeItems: 'center',
-              zIndex: 5,
-              pointerEvents: 'none',
-            }}
-          >
-            <p
-              style={{
-                margin: 0,
-                padding: '10px 14px',
-                borderRadius: 10,
-                border: '1px solid #d1d5db',
-                background: '#ffffffd9',
-                color: '#4b5563',
-              }}
-            >
+          <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 5, pointerEvents: 'none', }}>
+            <p style={{ margin: 0, padding: '10px 14px', borderRadius: 10, border: '1px solid #d1d5db', background: '#ffffffd9', color: '#4b5563', }}>
               This scope is empty. Add a node from the palette to start nesting.
             </p>
           </div>
