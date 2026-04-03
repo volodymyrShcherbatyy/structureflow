@@ -13,6 +13,8 @@ export type FlowEdgeToCoreDto = {
   sourceId: string;
   targetId: string;
   label?: string;
+  sourceHandle?: string;
+  targetHandle?: string;
 };
 
 const EDGE_STYLES: Record<string, { stroke: string; strokeDasharray?: string }> = {
@@ -30,6 +32,8 @@ export const coreEdgeToFlow = (edge: CoreEdge): FlowEdge<FlowEdgeData> => {
     id: edge.id.toString(),
     source: edge.sourceId.toString(),
     target: edge.targetId.toString(),
+    sourceHandle: edge.sourceHandle ?? undefined,
+    targetHandle: edge.targetHandle ?? undefined,
     label: edge.label,
     animated: edgeType === 'data-flow',
     markerEnd: {
@@ -49,4 +53,6 @@ export const flowEdgeToCore = (edge: FlowEdge<FlowEdgeData>): FlowEdgeToCoreDto 
   sourceId: edge.source,
   targetId: edge.target,
   label: edge.label ? String(edge.label) : undefined,
+  sourceHandle: edge.sourceHandle ?? undefined,
+  targetHandle: edge.targetHandle ?? undefined,
 });

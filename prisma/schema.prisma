@@ -96,6 +96,8 @@ model Edge {
   projectId String
   sourceId  String
   targetId  String
+  sourceHandle String?
+  targetHandle String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

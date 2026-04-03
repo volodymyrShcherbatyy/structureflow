@@ -102,6 +102,8 @@ export async function connectNodesAction(input: {
   targetId: string;
   type: string;
   label?: string;
+  sourceHandle?: string;
+  targetHandle?: string;
 }) {
   const { nodeRepository, edgeRepository } = await assertOwnership(input.projectId);
   const connectNodes = new ConnectNodes(nodeRepository, edgeRepository);
@@ -110,6 +112,8 @@ export async function connectNodesAction(input: {
     targetId: input.targetId,
     type: input.type,
     label: input.label,
+    sourceHandle: input.sourceHandle,
+    targetHandle: input.targetHandle,
   });
 
   return { edge: coreEdgeToFlow(edge) };

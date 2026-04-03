@@ -9,6 +9,7 @@ import { create } from 'zustand';
 
 import { FlowEdgeData } from '../canvas/mappers/edgeMapper';
 import { FlowNodeData } from '../canvas/mappers/nodeMapper';
+import { Connection } from '@xyflow/react';
 
 type CanvasNode = {
   id: string;
@@ -30,6 +31,8 @@ type CanvasEdge = {
 type PendingConnection = {
   source: string;
   target: string;
+  sourceHandle?: string | null;
+  targetHandle?: string | null;
 };
 
 export type PendingChange =
@@ -43,6 +46,8 @@ export type PendingChange =
       targetId: string;
       edgeType: string;
       label?: string;
+      sourceHandle?: string | null;
+      targetHandle?: string | null;
     }
   | { type: 'delete-edge'; edgeId: string };
 
@@ -56,7 +61,7 @@ type CanvasStore = {
   initCanvas: (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
-  onConnect: (connection: { source: string | null; target: string | null }) => void;
+  onConnect: (connection: Connection) => void;
   addNode: (node: CanvasNode) => void;
   removeNode: (nodeId: string) => void;
   addEdge: (edge: CanvasEdge) => void;
@@ -126,17 +131,19 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       };
     }),
   onConnect: (connection) => {
-    if (!connection.source || !connection.target) {
-      return;
-    }
+  if (!connection.source || !connection.target) {
+    return;
+  }
 
-    set({
-      pendingConnection: {
-        source: connection.source,
-        target: connection.target,
-      },
-    });
-  },
+  set({
+    pendingConnection: {
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle,
+      targetHandle: connection.targetHandle,
+    },
+  });
+},
   addNode: (node) => set((state) => ({ nodes: [...state.nodes, node] })),
   removeNode: (nodeId) =>
     set((state) => ({
@@ -196,6 +203,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       id: crypto.randomUUID(),
       source: pendingConnection.source,
       target: pendingConnection.target,
+      sourceHandle: pendingConnection.sourceHandle,
+      targetHandle: pendingConnection.targetHandle,
       animated: edgeType === 'data-flow',
       style:
         edgeType === 'data-flow'
@@ -220,6 +229,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       targetId: typedEdge.target,
       edgeType,
       label: typedEdge.label,
+      sourceHandle: typedEdge.sourceHandle ?? null,
+      targetHandle: typedEdge.targetHandle ?? null,
     });
   },
   addPendingChange: (change) =>

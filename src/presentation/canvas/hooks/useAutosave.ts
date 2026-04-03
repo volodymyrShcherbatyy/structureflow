@@ -37,6 +37,8 @@ async function processChange(change: PendingChange, projectId: string) {
       targetId: change.targetId,
       type: change.edgeType,
       label: change.label,
+      sourceHandle: change.sourceHandle ?? undefined,
+      targetHandle: change.targetHandle ?? undefined,
     });
 
     useCanvasStore.getState().replaceEdgeId(change.tempEdgeId, edge.id);

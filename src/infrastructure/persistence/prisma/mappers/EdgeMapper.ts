@@ -14,6 +14,8 @@ export class EdgeMapper {
       sourceId: NodeId.from(record.sourceId),
       targetId: NodeId.from(record.targetId),
       label: record.label ?? undefined,
+      sourceHandle: record.sourceHandle ?? undefined,
+      targetHandle: record.targetHandle ?? undefined,
     });
   }
 
@@ -27,6 +29,8 @@ export class EdgeMapper {
 
     sourceId: edge.sourceId.value,
     targetId: edge.targetId.value,
+    sourceHandle: edge.sourceHandle ?? null,
+    targetHandle: edge.targetHandle ?? null,
   };
 }
 
@@ -37,6 +41,8 @@ export class EdgeMapper {
 
       sourceId: edge.sourceId.value,
       targetId: edge.targetId.value,
+      sourceHandle: edge.sourceHandle ?? null,
+      targetHandle: edge.targetHandle ?? null,
     };
   }
 }
