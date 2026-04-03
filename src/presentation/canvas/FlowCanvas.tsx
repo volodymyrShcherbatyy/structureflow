@@ -32,6 +32,7 @@ function FlowCanvasContent() {
   const { fitView } = useReactFlow();
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const isResizing = useRef(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const visibleNodes = useMemo(
     () => nodes.filter((node) => (currentScopeId ? node.parentId === currentScopeId : !node.parentId)),
@@ -112,13 +113,29 @@ function FlowCanvasContent() {
 
 
   return (
-    <section style={{ display: 'flex', height: '100%', width: '100%', minHeight: 0,}}>
-      <div style={{ display: 'flex', flexDirection: 'column', width: sidebarWidth, minWidth: 180, maxWidth: 400, borderRight: '1px solid #e5e7eb', minHeight: 0,}}>
+    <section style={{ display: 'flex', height: '100%', width: '100%', minHeight: 0, position: 'relative',}}>
+
+      
+
+      <div style={{ display: 'flex', flexDirection: 'column', width: isCollapsed ? 0 : sidebarWidth, overflow: 'hidden', position: 'relative',
+                    transition: 'width 0.2s ease', minWidth: 180, maxWidth: 400, borderRight: '1px solid #e5e7eb', minHeight: 0,}}>
+
+        <button
+          onClick={() => setIsCollapsed((prev) => !prev)}
+          style={{  position: 'absolute', right: 0,  top: 10,zIndex: 10,background: '#fff',
+                    border: '1px solid #d1d5db',borderRadius: 6,padding: '4px 6px',cursor: 'pointer',}}>
+          {isCollapsed ? '▶' : '◀'}
+        </button>
         <NodePalette />
         <TreeView />
       </div>
 
-      <div onMouseDown={handleMouseDown} style={{ width: 4, cursor: 'col-resize', background: '#e5e7eb', }}/>
+      {!isCollapsed && (
+        <div
+          onMouseDown={handleMouseDown}
+          style={{ width: 4, cursor: 'col-resize', background: '#e5e7eb', }} 
+        /> 
+      )}
 
       <div style={{ flex: 1, position: 'relative', minHeight: 0, display: 'flex', flexDirection: 'column', }}>
         <SaveStatusIndicator />
