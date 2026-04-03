@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useScopeStore } from '../stores/scopeStore';
+import { useTreeViewStore } from '../stores/treeViewStore';
+import { useEffect } from 'react';
 
 type TreeNode = {
   id: string;
@@ -63,44 +65,84 @@ function TreeItem({ node, level = 0 }: { node: TreeNode; level?: number }) {
   const nodes = useCanvasStore((s) => s.nodes);
   const currentScopeId = useScopeStore((s) => s.currentScopeId);
   const isActive = currentScopeId === node.id;
+  const isExpanded = useTreeViewStore((s) => s.isExpanded(node.id));
+  const toggleNode = useTreeViewStore((s) => s.toggleNode);
 
   return (
     <div>
-      <button
-        onClick={() => {
-          const path = buildPath(node.id, nodes);
-          setScopePath(path);
-        }}
+      <div
         style={{
-          display: 'block',
-          width: '100%',
-          textAlign: 'left',
-          padding: '4px 8px',
+          display: 'flex',
+          alignItems: 'center',
           paddingLeft: 8 + level * 12,
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: 13,
-
-          background: isActive ? '#e0e7ff' : 'transparent',
-          color: isActive ? '#3730a3' : '#111827',
-          fontWeight: isActive ? 600 : 400,
-          borderRadius: 6,
         }}
       >
-        {node.label}
-      </button>
+        
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              if (node.children.length > 0) {
+                toggleNode(node.id);
+              }
+            }}
+            style={{
+              cursor: node.children.length > 0 ? 'pointer' : 'default',
+              width: 16,
+              display: 'inline-block',
+              userSelect: 'none',
+              textAlign: 'center',
+              opacity: node.children.length > 0 ? 1 : 0.3,
+            }}
+          >
+            {node.children.length > 0 ? (isExpanded ? '▼' : '▶') : '•'}
+          </span>
+        
 
-      {node.children.map((child) => (
-        <TreeItem key={child.id} node={child} level={level + 1} />
-      ))}
+        <button
+          onClick={() => {
+            const path = buildPath(node.id, nodes);
+            setScopePath(path);
+          }}
+          style={{
+            flex: 1,
+            display: 'block',
+            textAlign: 'left',
+            padding: '4px 8px',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 13,
+
+            background: isActive ? '#e0e7ff' : 'transparent',
+            color: isActive ? '#3730a3' : '#111827',
+            fontWeight: isActive ? 600 : 400,
+            borderRadius: 6,
+          }}
+        >
+          {node.label}
+        </button>
+      </div>
+
+      {isExpanded &&
+        node.children.map((child) => (
+          <TreeItem key={child.id} node={child} level={level + 1} />
+        ))}
     </div>
   );
 }
 
 export function TreeView() {
   const nodes = useCanvasStore((s) => s.nodes);
+  const scopeStack = useScopeStore((s) => s.scopeStack);
+  const expandPath = useTreeViewStore((s) => s.expandPath);
 
   const tree = useMemo(() => buildTree(nodes), [nodes]);
+
+  useEffect(() => {
+    if (!scopeStack.length) return;
+
+    const ids = scopeStack.map((p) => p.id);
+    expandPath(ids);
+  }, [scopeStack, expandPath]);
 
   return (
     <aside
