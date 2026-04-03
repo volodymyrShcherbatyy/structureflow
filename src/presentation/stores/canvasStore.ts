@@ -233,6 +233,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       targetHandle: typedEdge.targetHandle ?? null,
     });
   },
+  
   addPendingChange: (change) =>
     set((state) => {
       if (change.type === 'move') {

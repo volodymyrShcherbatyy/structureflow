@@ -39,10 +39,10 @@ export function NodePalette() {
 
   const ALLOWED_CHILDREN: Record<string, string[]> = {
     system: ['container', 'component', 'page', 'external'],
-    container: ['component', 'page', 'external'],
-    component: ['page', 'external'],
-    page: ['external'],
-    external: [],
+    container: ['container', 'component', 'page', 'external'],
+    component: ['container', 'component', 'page', 'external'],
+    page: ['container', 'component', 'page', 'external'],
+    external: ['container', 'component', 'page', 'external'],
   };
 
   const allowedTypes = parentType ? ALLOWED_CHILDREN[parentType] ?? [] : ['system']; // root level

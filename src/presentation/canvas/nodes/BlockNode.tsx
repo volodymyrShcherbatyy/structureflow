@@ -15,7 +15,13 @@ const TYPE_COLORS: Record<string, { header: string; border: string; background: 
   external: { header: '#374151', border: '#d1d5db', background: '#f9fafb' },
 };
 
-export function BlockNode({ id, data, selected }: NodeProps<FlowNodeData>) {
+type BlockNodeProps = {
+  id: string;
+  data: FlowNodeData;
+  selected: boolean;
+};
+
+export function BlockNode({ id, data, selected }: BlockNodeProps) {
   const nodes = useCanvasStore((state) => state.nodes);
   const updateNodeLabel = useCanvasStore((state) => state.updateNodeLabel);
   const addPendingChange = useCanvasStore((state) => state.addPendingChange);
