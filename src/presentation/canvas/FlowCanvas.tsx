@@ -13,6 +13,7 @@ import { useCanvasStore } from '../stores/canvasStore';
 import { useScopeStore } from '../stores/scopeStore';
 import { SelectionMode } from '@xyflow/react';
 import { TreeView } from '../sidebar/TreeView';
+import { useState, useRef } from 'react';
 
 function FlowCanvasContent() {
   const {
@@ -29,6 +30,8 @@ function FlowCanvasContent() {
   const scopeStackLength = useScopeStore((state) => state.scopeStack.length);
   const drillOut = useScopeStore((state) => state.drillOut);
   const { fitView } = useReactFlow();
+  const [sidebarWidth, setSidebarWidth] = useState(260);
+  const isResizing = useRef(false);
 
   const visibleNodes = useMemo(
     () => nodes.filter((node) => (currentScopeId ? node.parentId === currentScopeId : !node.parentId)),
@@ -76,6 +79,39 @@ function FlowCanvasContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [drillOut, scopeStackLength]);
 
+  
+
+  const handleMouseDown = () => {
+    isResizing.current = true;
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current) return;
+
+      const newWidth = e.clientX;
+
+      // обмеження
+      if (newWidth < 180 || newWidth > 400) return;
+
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      isResizing.current = false;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+
+
   return (
     <section
       style={{
@@ -89,7 +125,9 @@ function FlowCanvasContent() {
         style={{
           display: 'flex',
           flexDirection: 'column',
-          width: 240,
+          width: sidebarWidth,
+          minWidth: 180,
+          maxWidth: 400,
           borderRight: '1px solid #e5e7eb',
           minHeight: 0,
         }}
@@ -97,6 +135,15 @@ function FlowCanvasContent() {
         <NodePalette />
         <TreeView />
       </div>
+
+      <div
+        onMouseDown={handleMouseDown}
+        style={{
+          width: 4,
+          cursor: 'col-resize',
+          background: '#e5e7eb',
+        }}
+      />
 
       <div
         style={{
