@@ -147,10 +147,9 @@ export function TreeView() {
   return (
     <aside
       style={{
-        width: 240,
-        borderRight: '1px solid #e5e7eb',
-        padding: 12,
+        flex: 1,
         overflowY: 'auto',
+        padding: 12,
         height: '100%',
         minHeight: 0,
       }}

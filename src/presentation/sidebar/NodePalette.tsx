@@ -50,8 +50,6 @@ export function NodePalette() {
   return (
     <aside
       style={{
-        width: 220,
-        borderRight: '1px solid #e5e7eb',
         padding: 12,
         display: 'grid',
         gap: 8,

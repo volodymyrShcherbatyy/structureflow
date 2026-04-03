@@ -77,9 +77,26 @@ function FlowCanvasContent() {
   }, [drillOut, scopeStackLength]);
 
   return (
-    <section style={{ display: 'flex', height: '100%', width: '100%', minHeight: 0, }}>
-      <TreeView />
-      <NodePalette />
+    <section
+      style={{
+        display: 'flex',
+        height: '100%',
+        width: '100%',
+        minHeight: 0,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          width: 240,
+          borderRight: '1px solid #e5e7eb',
+          minHeight: 0,
+        }}
+      >
+        <NodePalette />
+        <TreeView />
+      </div>
 
       <div
         style={{
