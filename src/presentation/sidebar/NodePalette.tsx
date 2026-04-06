@@ -38,44 +38,38 @@ export function NodePalette() {
   };
 
   const ALLOWED_CHILDREN: Record<string, string[]> = {
-  system: ['container', 'component', 'page', 'external'],
-  container: ['component', 'page', 'external'],
-  component: ['page', 'external'],
-  page: ['external'],
-  external: [],
-};
+    system: ['container', 'component', 'page', 'external'],
+    container: ['container', 'component', 'page', 'external'],
+    component: ['container', 'component', 'page', 'external'],
+    page: ['container', 'component', 'page', 'external'],
+    external: ['container', 'component', 'page', 'external'],
+  };
 
   const allowedTypes = parentType ? ALLOWED_CHILDREN[parentType] ?? [] : ['system']; // root level
 
   return (
     <aside
-      style={{
-        padding: 12,
-        display: 'grid',
-        gap: 8,
-      }}
-    >
+      style={{  padding: 12,display: 'flex', flexDirection: 'column',gap: 8,height: 200,minHeight: 200,maxHeight: 200,
+                borderBottom: '1px solid #e5e7eb',}}>
       <strong style={{ fontSize: 12, textTransform: 'uppercase' }}>Node palette</strong>
-      {allowedTypes.map((type) => {
-        const typed = type as (typeof NODE_TYPES)[number];
+      <div style={{overflowY: 'auto',display: 'flex',flexDirection: 'column',gap: 8,flex: 1,}}>
+      
+        {allowedTypes.map((type) => {
+          const typed = type as (typeof NODE_TYPES)[number];
 
-        return (
-          <button
-            key={type}
-            type="button"
-            onClick={() => void handleCreateNode(typed)}
-            style={{
-              border: '1px solid #d1d5db',
-              background: '#fff',
-              borderRadius: 8,
-              padding: '8px 10px',
-              textAlign: 'left',
-            }}
-          >
-            {type[0].toUpperCase() + type.slice(1)}
-          </button>
-        );
-      })}
+          return (
+            <button
+              key={type}
+              type="button"
+              onClick={() => void handleCreateNode(typed)}
+              style={{  border: '1px solid #d1d5db', background: '#fff', borderRadius: 8, padding: '8px 10px', textAlign: 'left',
+                        height: 36, flexShrink: 0,}}>
+              {type[0].toUpperCase() + type.slice(1)}
+            </button>
+          );
+        })}
+
+      </div>
 
       {allowedTypes.length === 0 && (
         <p style={{ fontSize: 12, color: '#9ca3af' }}>
