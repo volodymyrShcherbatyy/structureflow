@@ -62,8 +62,8 @@ export function NodePalette() {
               key={type}
               type="button"
               onClick={() => void handleCreateNode(typed)}
-              style={{  border: '1px solid #d1d5db',background: '#fff',borderRadius: 8,padding: '8px 10px',textAlign: 'left',
-                        height: 36,flexShrink: 0,}}>
+              style={{  border: '1px solid #d1d5db', background: '#fff', borderRadius: 8, padding: '8px 10px', textAlign: 'left',
+                        height: 36, flexShrink: 0,}}>
               {type[0].toUpperCase() + type.slice(1)}
             </button>
           );

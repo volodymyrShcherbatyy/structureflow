@@ -78,38 +78,36 @@ export function BlockNode({ id, data, selected }: BlockNodeProps) {
       onDoubleClick={handleNodeDoubleClick}
       style={{
         minWidth: 180,
-        border: selected
-          ? '2px solid #6366f1'
-          : `1px solid ${color.border}`,
+        border: selected ? '2px solid #6366f1' : `1px solid ${color.border}`,
         borderRadius: 10,
         overflow: 'visible', // ← одразу підготуємо для handles
         background: color.background,
-        boxShadow: selected
-          ? '0 4px 12px rgba(99,102,241,0.25)'
-          : '0 1px 3px rgba(0,0,0,0.08)',
+        boxShadow: selected ? '0 4px 12px rgba(99,102,241,0.25)' : '0 1px 3px rgba(0,0,0,0.08)',
         cursor: 'zoom-in',
         transform: selected ? 'scale(1.02)' : 'scale(1)',
         transition: 'all 0.15s ease',
       }}
     >
       <Handle id="top" type="target" position={Position.Top} 
-        style={{ width: 10, height: 10, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
+        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
       <Handle id="left" type="target" position={Position.Left} 
-        style={{ width: 10, height: 10, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
+        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
       <Handle id="bottom" type="source" position={Position.Bottom} 
-        style={{ width: 10, height: 10, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
+        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
       <Handle id="right" type="source" position={Position.Right} 
-        style={{ width: 10, height: 10, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
+        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
         
       <header
         style={{
           background: color.header,
           color: '#fff',
           padding: '6px 10px',
-          fontSize: 12,
+          fontSize: 10,
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
-          fontWeight: 600,
+          fontWeight: 400,
+          borderTopLeftRadius: 10,
+          borderTopRightRadius: 10,
         }}
       >
         {data.nodeType}
@@ -127,7 +125,7 @@ export function BlockNode({ id, data, selected }: BlockNodeProps) {
               border: '1px solid #d1d5db',
               borderRadius: 6,
               padding: '6px 8px',
-              fontWeight: 600,
+              fontWeight: 400,
             }}
           />
         ) : (
