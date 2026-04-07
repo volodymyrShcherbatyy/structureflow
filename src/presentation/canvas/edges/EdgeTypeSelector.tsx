@@ -1,6 +1,15 @@
 'use client';
 
-const EDGE_TYPES = ['dependency', 'data-flow', 'navigation', 'api'] as const;
+const EDGE_TYPES = [
+  'dependency',
+  'data-flow',
+  'navigation',
+  'api',
+  'call',
+  'state',
+  'persist',
+  'transform',
+] as const;
 
 type EdgeTypeSelectorProps = {
   onSelect: (edgeType: string) => void;

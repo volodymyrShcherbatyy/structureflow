@@ -22,6 +22,11 @@ const EDGE_STYLES: Record<string, { stroke: string; strokeDasharray?: string }> 
   'data-flow': { stroke: '#2563eb', strokeDasharray: '6 4' },
   navigation: { stroke: '#7c3aed' },
   api: { stroke: '#dc2626' },
+
+  call: { stroke: '#059669' },          // зелений
+  state: { stroke: '#f59e0b', strokeDasharray: '4 2' }, // помаранчевий
+  persist: { stroke: '#0ea5e9' },       // блакитний
+  transform: { stroke: '#9333ea', strokeDasharray: '2 2' }, // фіолетовий пунктир
 };
 
 export const coreEdgeToFlow = (edge: CoreEdge): FlowEdge<FlowEdgeData> => {
@@ -35,7 +40,7 @@ export const coreEdgeToFlow = (edge: CoreEdge): FlowEdge<FlowEdgeData> => {
     sourceHandle: edge.sourceHandle ?? undefined,
     targetHandle: edge.targetHandle ?? undefined,
     label: edge.label,
-    animated: edgeType === 'data-flow',
+    animated: edgeType === 'data-flow' || edgeType === 'state',
     markerEnd: {
       type: MarkerType.ArrowClosed,
       color: style.stroke,
@@ -49,7 +54,7 @@ export const coreEdgeToFlow = (edge: CoreEdge): FlowEdge<FlowEdgeData> => {
 
 export const flowEdgeToCore = (edge: FlowEdge<FlowEdgeData>): FlowEdgeToCoreDto => ({
   id: edge.id,
-  type: EdgeType.from(edge.data?.edgeType ?? 'dependency').toString(),
+  type: EdgeType.from( edge.data?.edgeType ?? edge.type ?? 'dependency').toString(),
   sourceId: edge.source,
   targetId: edge.target,
   label: edge.label ? String(edge.label) : undefined,
