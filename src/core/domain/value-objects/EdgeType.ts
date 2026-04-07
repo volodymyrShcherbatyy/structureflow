@@ -1,12 +1,29 @@
-export type EdgeTypeValue = 'dependency' | 'data-flow' | 'navigation' | 'api';
+export type EdgeTypeValue =
+  | 'dependency'
+  | 'data-flow'
+  | 'navigation'
+  | 'api'
+  | 'call'
+  | 'state'
+  | 'persist'
+  | 'transform';
 
-const EDGE_TYPES: EdgeTypeValue[] = ['dependency', 'data-flow', 'navigation', 'api'];
+const EDGE_TYPES: EdgeTypeValue[] = [
+  'dependency',
+  'data-flow',
+  'navigation',
+  'api',
+  'call',
+  'state',
+  'persist',
+  'transform',
+];
 
 export class EdgeType {
   private constructor(private readonly value: EdgeTypeValue) {}
 
   public static from(value: string): EdgeType {
-    const normalized = value.toLowerCase() as EdgeTypeValue;
+    const normalized = value.trim().toLowerCase() as EdgeTypeValue;
 
     if (!EDGE_TYPES.includes(normalized)) {
       throw new Error(`Invalid EdgeType: ${value}`);

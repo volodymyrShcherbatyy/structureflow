@@ -14,6 +14,7 @@ import { useScopeStore } from '../stores/scopeStore';
 import { SelectionMode } from '@xyflow/react';
 import { TreeView } from '../sidebar/TreeView';
 import { useState, useRef } from 'react';
+import { EdgeLegend } from './EdgeLegend';
 
 function FlowCanvasContent() {
   const {
@@ -139,10 +140,11 @@ function FlowCanvasContent() {
 
       <div style={{ flex: 1, position: 'relative', minHeight: 0, display: 'flex', flexDirection: 'column', }}>
         <SaveStatusIndicator />
+        <EdgeLegend />
 
         {pendingConnection ? (
           <EdgeTypeSelector
-            onSelect={(edgeType) => addTypedEdgeFromPending(edgeType)}
+            onSelect={(edgeType) => {addTypedEdgeFromPending(edgeType);}}
             onCancel={() => setPendingConnection(null)}
           />
         ) : null}

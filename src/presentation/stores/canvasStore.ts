@@ -199,21 +199,29 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       return;
     }
 
+    const EDGE_STYLES: Record<string, { stroke: string; strokeDasharray?: string }> = {
+      dependency: { stroke: '#6b7280' },
+      'data-flow': { stroke: '#2563eb', strokeDasharray: '6 4' },
+      navigation: { stroke: '#7c3aed' },
+      api: { stroke: '#dc2626' },
+
+      call: { stroke: '#059669' },
+      state: { stroke: '#f59e0b', strokeDasharray: '4 2' },
+      persist: { stroke: '#0ea5e9' },
+      transform: { stroke: '#9333ea', strokeDasharray: '2 2' },
+    };
+
     const typedEdge: CanvasEdge = {
       id: crypto.randomUUID(),
       source: pendingConnection.source,
       target: pendingConnection.target,
       sourceHandle: pendingConnection.sourceHandle,
       targetHandle: pendingConnection.targetHandle,
-      animated: edgeType === 'data-flow',
-      style:
-        edgeType === 'data-flow'
-          ? { stroke: '#2563eb', strokeDasharray: '6 4' }
-          : edgeType === 'navigation'
-            ? { stroke: '#7c3aed' }
-            : edgeType === 'api'
-              ? { stroke: '#dc2626' }
-              : { stroke: '#6b7280' },
+
+      animated: edgeType === 'data-flow' || edgeType === 'state',
+
+      style: EDGE_STYLES[edgeType] ?? EDGE_STYLES.dependency,
+
       data: { edgeType },
     };
 
