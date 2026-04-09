@@ -15,6 +15,7 @@ import { SelectionMode } from '@xyflow/react';
 import { TreeView } from '../sidebar/TreeView';
 import { useState, useRef } from 'react';
 import { EdgeLegend } from './EdgeLegend';
+import './edgeStyles.css'
 
 function FlowCanvasContent() {
   const {
