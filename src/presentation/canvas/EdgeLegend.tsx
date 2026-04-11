@@ -1,21 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { getEdgeLegendItems } from './edgeStyles';
 
 export function EdgeLegend() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const items = [
-    { type: 'dependency', color: '#6b7280', label: 'Dependency' },
-    { type: 'data-flow', color: '#2563eb', label: 'Data Flow' },
-    { type: 'navigation', color: '#7c3aed', label: 'Navigation' },
-    { type: 'api', color: '#dc2626', label: 'API' },
-
-    { type: 'call', color: '#059669', label: 'Call' },
-    { type: 'state', color: '#f59e0b', label: 'State / Reactive' },
-    { type: 'persist', color: '#0ea5e9', label: 'Persistence' },
-    { type: 'transform', color: '#9333ea', label: 'Transform' },
-  ];
+  const items = getEdgeLegendItems();
 
   return (
     <div
@@ -62,6 +53,7 @@ export function EdgeLegend() {
                   width: 15,
                   height: 10,
                   background: item.color,
+                  borderTop: item.dash ? `2px dashed ${item.color}` : undefined,
                 }}
               />
               <span>{item.label}</span>
