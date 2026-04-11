@@ -33,7 +33,7 @@ export function Breadcrumb() {
             fontWeight: 600,
           }}
         >
-          ← Проєкти
+          ← Projects
         </Link>
 
         <button

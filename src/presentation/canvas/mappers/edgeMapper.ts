@@ -2,6 +2,7 @@ import { Edge as FlowEdge, MarkerType } from '@xyflow/react';
 
 import { Edge as CoreEdge } from '../../../core/domain/entities/Edge';
 import { EdgeType } from '../../../core/domain/value-objects/EdgeType';
+import { getEdgeStyle, isAnimated } from '../edgeStyles';
 
 export type FlowEdgeData = {
   edgeType: string;
@@ -17,21 +18,9 @@ export type FlowEdgeToCoreDto = {
   targetHandle?: string;
 };
 
-const EDGE_STYLES: Record<string, { stroke: string; strokeDasharray?: string }> = {
-  dependency: { stroke: '#6b7280' },
-  'data-flow': { stroke: '#2563eb', strokeDasharray: '6 4' },
-  navigation: { stroke: '#7c3aed' },
-  api: { stroke: '#dc2626' },
-
-  call: { stroke: '#059669' },          // зелений
-  state: { stroke: '#f59e0b', strokeDasharray: '4 2' }, // помаранчевий
-  persist: { stroke: '#0ea5e9' },       // блакитний
-  transform: { stroke: '#9333ea', strokeDasharray: '2 2' }, // фіолетовий пунктир
-};
-
 export const coreEdgeToFlow = (edge: CoreEdge): FlowEdge<FlowEdgeData> => {
   const edgeType = edge.type.toString();
-  const style = EDGE_STYLES[edgeType] ?? EDGE_STYLES.dependency;
+  const style = getEdgeStyle(edgeType);
 
   return {
     id: edge.id.toString(),
@@ -40,7 +29,7 @@ export const coreEdgeToFlow = (edge: CoreEdge): FlowEdge<FlowEdgeData> => {
     sourceHandle: edge.sourceHandle ?? undefined,
     targetHandle: edge.targetHandle ?? undefined,
     label: edge.label,
-    animated: edgeType === 'data-flow' || edgeType === 'state',
+    animated: isAnimated(edgeType),
     markerEnd: {
       type: MarkerType.ArrowClosed,
       color: style.stroke,
