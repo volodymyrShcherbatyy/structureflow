@@ -35,6 +35,10 @@ function FlowCanvasContent() {
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const isResizing = useRef(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const setSelectedNode = useCanvasStore(state => state.setSelectedNode);
+  const selectedNodeId = useCanvasStore(state => state.selectedNodeId);
+  const isTraceEnabled = useCanvasStore(state => state.isTraceEnabled);
+  const toggleTrace = useCanvasStore(state => state.toggleTrace);
 
   const visibleNodes = useMemo(
     () => nodes.filter((node) => (currentScopeId ? node.parentId === currentScopeId : !node.parentId)),
@@ -47,6 +51,45 @@ function FlowCanvasContent() {
     () => edges.filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)),
     [edges, visibleNodeIds],
   );
+
+  const tracedEdges = useMemo(() => {
+    if (!isTraceEnabled || !selectedNodeId) return visibleEdges;
+
+    return visibleEdges.map(edge => {
+      const isConnected =
+        edge.source === selectedNodeId ||
+        edge.target === selectedNodeId;
+
+      return {
+        ...edge,
+        style: {
+          ...(typeof edge.style === 'object' && edge.style !== null ? edge.style : {}),
+          opacity: isConnected ? 1 : 0.2,
+        },
+      };
+    });
+  }, [visibleEdges, selectedNodeId]);
+
+  const tracedNodes = useMemo(() => {
+  if (!isTraceEnabled || !selectedNodeId) return visibleNodes;
+
+  return visibleNodes.map(node => {
+    const isConnected =
+      node.id === selectedNodeId ||
+      visibleEdges.some(
+        e =>
+          (e.source === selectedNodeId && e.target === node.id) ||
+          (e.target === selectedNodeId && e.source === node.id)
+      );
+
+    return {
+      ...node,
+      style: {
+        opacity: isConnected ? 1 : 0.2,
+      },
+    };
+  });
+}, [visibleNodes, visibleEdges, selectedNodeId]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -143,6 +186,27 @@ function FlowCanvasContent() {
         <SaveStatusIndicator />
         <EdgeLegend />
 
+        <div
+          style={{
+            position: 'absolute',
+            top: 50,
+            left: 16, // щоб не перекривало legend
+            zIndex: 50,
+            background: '#ffffff78',
+            border: '1px solid #e5e7eb',
+            borderRadius: 14,
+            padding: '6px 10px',
+            fontSize: 12,
+            cursor: 'pointer',
+            userSelect: 'none',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.06)',
+          }}
+          onClick={toggleTrace}
+        >
+          {isTraceEnabled ? '🟢 Trace: ON' : '⚪ Trace: OFF'}
+          
+        </div>
+
         {pendingConnection ? (
           <EdgeTypeSelector
             onSelect={(edgeType) => {addTypedEdgeFromPending(edgeType);}}
@@ -160,8 +224,8 @@ function FlowCanvasContent() {
 
         <div style={{ flex: 1, minHeight: 0 }}>
           <ReactFlow
-            nodes={visibleNodes}
-            edges={visibleEdges}
+            nodes={tracedNodes}
+            edges={tracedEdges}
             onNodesChange={onNodesChange as never}
             onEdgesChange={onEdgesChange as never}
             onConnect={onConnect}
@@ -171,6 +235,10 @@ function FlowCanvasContent() {
             selectionOnDrag={true}
             selectionMode={SelectionMode.Partial}
             multiSelectionKeyCode="Shift"
+            onNodeClick={(_, node) => {
+              setSelectedNode(node.id);
+            }}
+            onPaneClick={() => setSelectedNode(null)}
           >
         
             <MiniMap />
