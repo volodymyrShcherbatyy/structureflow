@@ -12,7 +12,7 @@ export function EdgeLegend() {
     <div
       style={{
         position: 'absolute',
-        top: 50,
+        top: 86,
         left: 16,
         zIndex: 50,
         pointerEvents: 'auto',

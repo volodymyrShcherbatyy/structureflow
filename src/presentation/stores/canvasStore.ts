@@ -26,7 +26,10 @@ type CanvasEdge = {
   target: string;
   label?: string;
   data?: FlowEdgeData;
-  [key: string]: unknown;
+  sourceHandle?: string;
+  targetHandle?: string;
+  animated?: boolean;
+  style?: React.CSSProperties;
 };
 
 type PendingConnection = {
@@ -76,6 +79,10 @@ type CanvasStore = {
   clearPendingChanges: () => void;
   setSaving: (isSaving: boolean) => void;
   markSaved: () => void;
+  selectedNodeId: string | null;
+  setSelectedNode: (nodeId: string | null) => void;
+  isTraceEnabled: boolean;
+  toggleTrace: () => void;
 };
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
@@ -85,6 +92,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   pendingChanges: [],
   isSaving: false,
   lastSavedAt: null,
+  selectedNodeId: null,
+  setSelectedNode: (nodeId) => set({ selectedNodeId: nodeId }),
   initCanvas: (nodes, edges) =>
     set({
       nodes,
@@ -94,6 +103,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       isSaving: false,
       lastSavedAt: null,
     }),
+
+    isTraceEnabled: false,
+
+    toggleTrace: () =>
+      set((state) => ({
+        isTraceEnabled: !state.isTraceEnabled,
+        selectedNodeId: null, // ← ОЦЕ ДОДАЄМО
+      })),
+
   onNodesChange: (changes) =>
     set((state) => {
       const nextNodes = applyNodeChanges(changes as never, state.nodes as never) as CanvasNode[];
@@ -223,8 +241,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       targetId: typedEdge.target,
       edgeType,
       label: typedEdge.label,
-      sourceHandle: typedEdge.sourceHandle ?? null,
-      targetHandle: typedEdge.targetHandle ?? null,
+      sourceHandle: pendingConnection.sourceHandle ?? undefined,
+      targetHandle: pendingConnection.targetHandle ?? undefined,
     });
   },
   
