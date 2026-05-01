@@ -30,8 +30,24 @@ const testPrisma = new PrismaClient({
 
 const cleanDatabase = async (): Promise<void> => {
   await testPrisma.edge.deleteMany();
+  await testPrisma.port.deleteMany();
   await testPrisma.node.deleteMany();
   await testPrisma.project.deleteMany();
+  await testPrisma.session.deleteMany();
+  await testPrisma.account.deleteMany();
+  await testPrisma.user.deleteMany();
+};
+
+const createUser = async (id = 'owner-1') => {
+  return testPrisma.user.upsert({
+    where: { id },
+    update: {},
+    create: {
+      id,
+      email: `${id}@example.com`,
+      name: id,
+    },
+  });
 };
 
 describe('PrismaNodeRepository (integration)', () => {
@@ -57,6 +73,8 @@ describe('PrismaNodeRepository (integration)', () => {
       updatedAt: new Date(),
     });
 
+    await createUser('owner-1');
+
     await projectRepository.save(project);
 
     const node = new Node({
@@ -64,11 +82,12 @@ describe('PrismaNodeRepository (integration)', () => {
       type: NodeType.from('container'),
       label: 'Frontend',
       description: 'desc',
-      position: new Position(10, 20),
+      position: Position.from(10, 20),
       parentId: undefined,
+      projectId: project.id,
     });
 
-    await nodeRepository.save(node, project.id);
+    await nodeRepository.save(node);
 
     const found = await nodeRepository.findById(node.id);
 
@@ -77,6 +96,7 @@ describe('PrismaNodeRepository (integration)', () => {
   });
 
   it('retrieve by project', async () => {
+    await createUser('owner-1');
     const project = await testPrisma.project.create({
       data: { name: 'Project', ownerId: 'owner-1' },
     });
@@ -86,8 +106,9 @@ describe('PrismaNodeRepository (integration)', () => {
       type: NodeType.from('container'),
       label: 'A',
       description: undefined,
-      position: new Position(0, 0),
+      position: Position.from(0, 0),
       parentId: undefined,
+      projectId: ProjectId.from(project.id),
     });
 
     const second = new Node({
@@ -95,11 +116,12 @@ describe('PrismaNodeRepository (integration)', () => {
       type: NodeType.from('component'),
       label: 'B',
       description: undefined,
-      position: new Position(1, 1),
+      position: Position.from(1, 1),
       parentId: undefined,
+      projectId: ProjectId.from(project.id),
     });
 
-    await nodeRepository.saveMany([first, second], ProjectId.from(project.id));
+    await nodeRepository.saveMany([first, second]);
 
     const all = await nodeRepository.findAllByProject(ProjectId.from(project.id));
     expect(all).toHaveLength(2);
@@ -114,6 +136,8 @@ describe('PrismaNodeRepository (integration)', () => {
       updatedAt: new Date(),
     });
 
+    await createUser('owner-1');
+
     await projectRepository.save(project);
 
     const parent = new Node({
@@ -121,25 +145,27 @@ describe('PrismaNodeRepository (integration)', () => {
       type: NodeType.from('container'),
       label: 'Parent',
       description: undefined,
-      position: new Position(0, 0),
+      position: Position.from(0, 0),
       parentId: undefined,
+      projectId: project.id,
     });
 
-    await nodeRepository.save(parent, project.id);
+    await nodeRepository.save(parent);
 
     const child = new Node({
       id: NodeId.from(randomUUID()),
       type: NodeType.from('component'),
       label: 'Child',
       description: undefined,
-      position: new Position(2, 2),
+      position: Position.from(2, 2),
       parentId: parent.id,
+      projectId: project.id,
     });
 
-    await nodeRepository.save(child, project.id);
+    await nodeRepository.save(child);
 
     const found = await nodeRepository.findById(child.id);
-    expect(found?.parentId?.value).toBe(parent.id.value);
+    expect(found?.parentId?.toString()).toBe(parent.id.toString());
   });
 
   it('cascade delete edges when node deleted', async () => {
@@ -151,6 +177,8 @@ describe('PrismaNodeRepository (integration)', () => {
       updatedAt: new Date(),
     });
 
+    await createUser('owner-1');
+
     await projectRepository.save(project);
 
     const parentNode = new Node({
@@ -158,22 +186,24 @@ describe('PrismaNodeRepository (integration)', () => {
       type: NodeType.from('container'),
       label: 'Parent',
       description: undefined,
-      position: new Position(0, 0),
+      position: Position.from(0, 0),
       parentId: undefined,
+      projectId: project.id,
     });
 
-    await nodeRepository.save(parentNode, project.id);
+    await nodeRepository.save(parentNode);
 
     const childNode = new Node({
       id: NodeId.from(randomUUID()),
       type: NodeType.from('component'),
       label: 'Child',
       description: undefined,
-      position: new Position(1, 1),
+      position: Position.from(1, 1),
       parentId: parentNode.id,
+      projectId: project.id,
     });
 
-    await nodeRepository.save(childNode, project.id);
+    await nodeRepository.save(childNode);
 
     const edge = new Edge({
       id: EdgeId.from(randomUUID()),
@@ -181,9 +211,10 @@ describe('PrismaNodeRepository (integration)', () => {
       sourceId: parentNode.id,
       targetId: childNode.id,
       label: undefined,
+      projectId: project.id,
     });
 
-    await edgeRepository.save(edge, project.id);
+    await edgeRepository.save(edge);
 
     await nodeRepository.delete(parentNode.id);
 

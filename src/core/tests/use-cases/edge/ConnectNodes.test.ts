@@ -6,6 +6,9 @@ import { NodeType } from '../../../domain/value-objects/NodeType';
 import { Position } from '../../../domain/value-objects/Position';
 import { InMemoryEdgeRepository } from '../../fakes/InMemoryEdgeRepository';
 import { InMemoryNodeRepository } from '../../fakes/InMemoryNodeRepository';
+import { ProjectId } from '../../../domain/value-objects/ProjectId';
+
+const PROJECT_ID = ProjectId.from('11111111-1111-4111-8111-111111111111');
 
 describe('ConnectNodes', () => {
   it('connects two existing nodes', async () => {
@@ -17,12 +20,14 @@ describe('ConnectNodes', () => {
       type: NodeType.from('container'),
       label: 'A',
       position: Position.origin(),
+      projectId: PROJECT_ID,
     });
     const target = new Node({
       id: NodeId.create(),
       type: NodeType.from('component'),
       label: 'B',
       position: Position.origin(),
+      projectId: PROJECT_ID,
     });
 
     await nodeRepository.saveMany([source, target]);
@@ -47,6 +52,7 @@ describe('ConnectNodes', () => {
       type: NodeType.from('container'),
       label: 'A',
       position: Position.origin(),
+      projectId: PROJECT_ID,
     });
     await nodeRepository.save(node);
 

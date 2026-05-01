@@ -1,4 +1,5 @@
-import { Project as PrismaProject, Prisma } from '@prisma/client';
+import { Prisma, Project as PrismaProject } from '@prisma/client';
+
 import { Project } from '../../../../core/domain/entities/Project';
 import { ProjectId } from '../../../../core/domain/value-objects/ProjectId';
 
@@ -13,15 +14,15 @@ export class ProjectMapper {
     });
   }
 
-  static toPrismaCreate(project: Project): Prisma.ProjectCreateInput {
+  static toPrismaCreate(project: Project): Prisma.ProjectUncheckedCreateInput {
     return {
-      id: project.id.value,
+      id: project.id.toString(),
       name: project.name,
       ownerId: project.ownerId,
     };
   }
 
-  static toPrismaUpdate(project: Project): Prisma.ProjectUpdateInput {
+  static toPrismaUpdate(project: Project): Prisma.ProjectUncheckedUpdateInput {
     return {
       name: project.name,
       ownerId: project.ownerId,

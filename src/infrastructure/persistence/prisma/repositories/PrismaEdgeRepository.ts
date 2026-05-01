@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+
 import { IEdgeRepository } from '../../../../core/application/ports/IEdgeRepository';
 import { Edge } from '../../../../core/domain/entities/Edge';
 import { EdgeId } from '../../../../core/domain/value-objects/EdgeId';
@@ -11,7 +12,7 @@ export class PrismaEdgeRepository implements IEdgeRepository {
 
   async findById(id: EdgeId): Promise<Edge | null> {
     const record = await this.prisma.edge.findUnique({
-      where: { id: id.value },
+      where: { id: id.toString() },
     });
 
     return record ? EdgeMapper.toDomain(record) : null;
@@ -19,7 +20,7 @@ export class PrismaEdgeRepository implements IEdgeRepository {
 
   async findAllByProject(projectId: ProjectId): Promise<Edge[]> {
     const records = await this.prisma.edge.findMany({
-      where: { projectId: projectId.value },
+      where: { projectId: projectId.toString() },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -29,7 +30,7 @@ export class PrismaEdgeRepository implements IEdgeRepository {
   async findByNode(nodeId: NodeId): Promise<Edge[]> {
     const records = await this.prisma.edge.findMany({
       where: {
-        OR: [{ sourceId: nodeId.value }, { targetId: nodeId.value }],
+        OR: [{ sourceId: nodeId.toString() }, { targetId: nodeId.toString() }],
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -45,7 +46,7 @@ export class PrismaEdgeRepository implements IEdgeRepository {
 
   async delete(id: EdgeId): Promise<void> {
     await this.prisma.edge.delete({
-      where: { id: id.value },
+      where: { id: id.toString() },
     });
   }
 }

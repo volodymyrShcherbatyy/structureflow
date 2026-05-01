@@ -29,16 +29,32 @@ const testPrisma = new PrismaClient({
 });
 
 const cleanDatabase = async (): Promise<void> => {
-  await testPrisma.$transaction([
-    testPrisma.edge.deleteMany(),
-    testPrisma.node.deleteMany(),
-    testPrisma.project.deleteMany(),
-  ]);
+  await testPrisma.edge.deleteMany();
+  await testPrisma.port.deleteMany();
+  await testPrisma.node.deleteMany();
+  await testPrisma.project.deleteMany();
+  await testPrisma.session.deleteMany();
+  await testPrisma.account.deleteMany();
+  await testPrisma.user.deleteMany();
+};
+
+const createUser = async (id = 'owner-1') => {
+  return testPrisma.user.upsert({
+    where: { id },
+    update: {},
+    create: {
+      id,
+      email: `${id}@example.com`,
+      name: id,
+    },
+  });
 };
 
 const createProject = async (
   projectRepository: PrismaProjectRepository,
 ): Promise<Project> => {
+  await createUser('owner-1');
+
   const project = new Project({
     id: ProjectId.from(randomUUID()),
     name: 'Project',
@@ -50,6 +66,7 @@ const createProject = async (
   await projectRepository.save(project);
   return project;
 };
+
 
 const createNode = async (
   nodeRepository: PrismaNodeRepository,
@@ -64,11 +81,12 @@ const createNode = async (
     type: NodeType.from(type),
     label,
     description: undefined,
-    position: new Position(x, y),
+    position: Position.from(x, y),
     parentId: undefined,
+    projectId,
   });
 
-  await nodeRepository.save(node, projectId);
+  await nodeRepository.save(node);
   return node;
 };
 
@@ -94,8 +112,9 @@ describe('PrismaEdgeRepository (integration)', () => {
       type: NodeType.from('container'),
       label: 'Source',
       description: undefined,
-      position: new Position(0, 0),
+      position: Position.from(0, 0),
       parentId: undefined,
+      projectId: project.id,
     });
 
     const targetNode = new Node({
@@ -103,12 +122,13 @@ describe('PrismaEdgeRepository (integration)', () => {
       type: NodeType.from('component'),
       label: 'Target',
       description: undefined,
-      position: new Position(0, 0),
+      position: Position.from(0, 0),
       parentId: undefined,
+      projectId: project.id,
     });
 
-    await nodeRepository.save(sourceNode, project.id);
-    await nodeRepository.save(targetNode, project.id);
+    await nodeRepository.save(sourceNode);
+    await nodeRepository.save(targetNode);
 
     const edge = new Edge({
       id: EdgeId.from(randomUUID()),
@@ -116,12 +136,13 @@ describe('PrismaEdgeRepository (integration)', () => {
       sourceId: sourceNode.id,
       targetId: targetNode.id,
       label: 'depends-on',
+      projectId: project.id,
     });
 
-    expect(edge.sourceId.value).toBe(sourceNode.id.value);
-    expect(edge.targetId.value).toBe(targetNode.id.value);
+    expect(edge.sourceId.toString()).toBe(sourceNode.id.toString());
+    expect(edge.targetId.toString()).toBe(targetNode.id.toString());
 
-    await edgeRepository.save(edge, project.id);
+    await edgeRepository.save(edge);
 
     const found = await edgeRepository.findById(edge.id);
 
@@ -137,8 +158,9 @@ describe('PrismaEdgeRepository (integration)', () => {
       type: NodeType.from('container'),
       label: 'N1',
       description: undefined,
-      position: new Position(0, 0),
+      position: Position.from(0, 0),
       parentId: undefined,
+      projectId: project.id,
     });
 
     const targetNode = new Node({
@@ -146,12 +168,13 @@ describe('PrismaEdgeRepository (integration)', () => {
       type: NodeType.from('component'),
       label: 'N2',
       description: undefined,
-      position: new Position(1, 1),
+      position: Position.from(1, 1),
       parentId: undefined,
+      projectId: project.id,
     });
 
-    await nodeRepository.save(sourceNode, project.id);
-    await nodeRepository.save(targetNode, project.id);
+    await nodeRepository.save(sourceNode);
+    await nodeRepository.save(targetNode);
 
     const edge = new Edge({
       id: EdgeId.from(randomUUID()),
@@ -159,9 +182,10 @@ describe('PrismaEdgeRepository (integration)', () => {
       sourceId: sourceNode.id,
       targetId: targetNode.id,
       label: undefined,
+      projectId: project.id,
     });
 
-    await edgeRepository.save(edge, project.id);
+    await edgeRepository.save(edge);
 
     const byNode = await edgeRepository.findByNode(sourceNode.id);
 
@@ -179,9 +203,10 @@ describe('PrismaEdgeRepository (integration)', () => {
       sourceId: source.id,
       targetId: target.id,
       label: 'call',
+      projectId: project.id,
     });
 
-    await edgeRepository.save(edge, project.id);
+    await edgeRepository.save(edge);
 
     const edges = await edgeRepository.findAllByProject(project.id);
 

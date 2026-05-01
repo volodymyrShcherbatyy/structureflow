@@ -27,7 +27,7 @@ export class MoveNode {
     }
 
     const moved = node.moveTo(Position.from(input.x, input.y));
-    await this.nodeRepository.save(moved, node.projectId);
+    await this.nodeRepository.save(moved);
 
     return {
       nodeId: moved.id.toString(),

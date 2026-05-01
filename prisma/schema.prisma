@@ -63,6 +63,7 @@ model Project {
   owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   nodes Node[]
   edges Edge[]
+  ports Port[]
 
   @@index([ownerId])
 }
@@ -82,11 +83,30 @@ model Node {
   project       Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   parent        Node?   @relation("NodeChildren", fields: [parentId], references: [id], onDelete: SetNull)
   children      Node[]  @relation("NodeChildren")
+  ports         Port[]
   sourcedEdges  Edge[]  @relation("EdgeSource")
   targetedEdges Edge[]  @relation("EdgeTarget")
 
   @@index([projectId])
   @@index([parentId])
+}
+
+model Port {
+  id        String   @id
+  side      String
+  positionX Float    @default(0)
+  positionY Float    @default(0)
+  nodeId    String
+  projectId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  node    Node    @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([nodeId, side])
+  @@index([nodeId])
+  @@index([projectId])
 }
 
 model Edge {
