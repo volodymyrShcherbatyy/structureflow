@@ -9,7 +9,7 @@ export class PrismaProjectRepository implements IProjectRepository {
 
   async findById(id: ProjectId): Promise<Project | null> {
     const record = await this.prisma.project.findUnique({
-      where: { id: id.value },
+      where: { id: id.toString() },
     });
 
     return record ? ProjectMapper.toDomain(record) : null;
@@ -26,7 +26,7 @@ export class PrismaProjectRepository implements IProjectRepository {
 
   async save(project: Project): Promise<void> {
     await this.prisma.project.upsert({
-      where: { id: project.id.value },
+      where: { id: project.id.toString() },
       create: ProjectMapper.toPrismaCreate(project),
       update: ProjectMapper.toPrismaUpdate(project),
     });
@@ -34,7 +34,7 @@ export class PrismaProjectRepository implements IProjectRepository {
 
   async delete(id: ProjectId): Promise<void> {
     await this.prisma.project.delete({
-      where: { id: id.value },
+      where: { id: id.toString() },
     });
   }
 }

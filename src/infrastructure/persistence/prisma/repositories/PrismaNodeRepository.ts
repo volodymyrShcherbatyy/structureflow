@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+
 import { INodeRepository } from '../../../../core/application/ports/INodeRepository';
 import { Node } from '../../../../core/domain/entities/Node';
 import { NodeId } from '../../../../core/domain/value-objects/NodeId';
@@ -10,7 +11,7 @@ export class PrismaNodeRepository implements INodeRepository {
 
   async findById(id: NodeId): Promise<Node | null> {
     const record = await this.prisma.node.findUnique({
-      where: { id: id.value },
+      where: { id: id.toString() },
     });
 
     return record ? NodeMapper.toDomain(record) : null;
@@ -18,7 +19,7 @@ export class PrismaNodeRepository implements INodeRepository {
 
   async findAllByProject(projectId: ProjectId): Promise<Node[]> {
     const records = await this.prisma.node.findMany({
-      where: { projectId: projectId.value },
+      where: { projectId: projectId.toString() },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -27,8 +28,8 @@ export class PrismaNodeRepository implements INodeRepository {
 
   async save(node: Node): Promise<void> {
     await this.prisma.node.upsert({
-      where: { id: node.id.value },
-      create: NodeMapper.toPrismaCreate(node, node.projectId.value),
+      where: { id: node.id.toString() },
+      create: NodeMapper.toPrismaCreate(node),
       update: NodeMapper.toPrismaUpdate(node),
     });
   }
@@ -37,8 +38,8 @@ export class PrismaNodeRepository implements INodeRepository {
     await this.prisma.$transaction(
       nodes.map((node) =>
         this.prisma.node.upsert({
-          where: { id: node.id.value },
-          create: NodeMapper.toPrismaCreate(node, node.projectId.value),
+          where: { id: node.id.toString() },
+          create: NodeMapper.toPrismaCreate(node),
           update: NodeMapper.toPrismaUpdate(node),
         }),
       ),
@@ -47,7 +48,7 @@ export class PrismaNodeRepository implements INodeRepository {
 
   async delete(id: NodeId): Promise<void> {
     await this.prisma.node.delete({
-      where: { id: id.value },
+      where: { id: id.toString() },
     });
   }
 }

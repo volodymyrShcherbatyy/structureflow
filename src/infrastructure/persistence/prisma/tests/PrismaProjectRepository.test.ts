@@ -21,8 +21,24 @@ const testPrisma = new PrismaClient({
 
 const cleanDatabase = async (): Promise<void> => {
   await testPrisma.edge.deleteMany();
+  await testPrisma.port.deleteMany();
   await testPrisma.node.deleteMany();
   await testPrisma.project.deleteMany();
+  await testPrisma.session.deleteMany();
+  await testPrisma.account.deleteMany();
+  await testPrisma.user.deleteMany();
+};
+
+const createUser = async (id = 'owner-1') => {
+  return testPrisma.user.upsert({
+    where: { id },
+    update: {},
+    create: {
+      id,
+      email: `${id}@example.com`,
+      name: id,
+    },
+  });
 };
 
 const makeProject = (name: string, ownerId: string): Project =>
@@ -37,16 +53,21 @@ const makeProject = (name: string, ownerId: string): Project =>
 describe('PrismaProjectRepository (integration)', () => {
   const repository = new PrismaProjectRepository(testPrisma);
 
+  
   beforeEach(async () => {
     await cleanDatabase();
   });
+
 
   afterAll(async () => {
     await cleanDatabase();
     await testPrisma.$disconnect();
   });
 
+
   it('save and retrieve', async () => {
+    await createUser('owner-1');
+
     const project = makeProject('Project One', 'owner-1');
 
     await repository.save(project);
@@ -58,7 +79,10 @@ describe('PrismaProjectRepository (integration)', () => {
     expect(found?.ownerId).toBe('owner-1');
   });
 
+
   it('update via upsert', async () => {
+    await createUser('owner-1');
+
     const project = makeProject('Old Name', 'owner-1');
 
     await repository.save(project);
@@ -78,7 +102,11 @@ describe('PrismaProjectRepository (integration)', () => {
     expect(found?.name).toBe('New Name');
   });
 
+
   it('findAllByOwner', async () => {
+    await createUser('owner-1');
+    await createUser('owner-2');
+
     const first = makeProject('A', 'owner-1');
     const second = makeProject('B', 'owner-1');
     const third = makeProject('C', 'owner-2');
@@ -92,11 +120,14 @@ describe('PrismaProjectRepository (integration)', () => {
     expect(owned).toHaveLength(2);
   });
 
+
   it('delete with cascade', async () => {
+    await createUser('owner-1');
+
     const project = makeProject('Cascade', 'owner-1');
     await repository.save(project);
 
-    await repository.delete(ProjectId.from(project.id.value));
+    await repository.delete(ProjectId.from(project.id.toString()));
 
     const found = await repository.findById(project.id);
     expect(found).toBeNull();

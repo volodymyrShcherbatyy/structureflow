@@ -30,7 +30,7 @@ export class NestNode {
     }
 
     const nested = node.nestUnder(parent);
-    await this.nodeRepository.save(nested, node.projectId);
+    await this.nodeRepository.save(nested);
 
     return {
       nodeId: nested.id.toString(),

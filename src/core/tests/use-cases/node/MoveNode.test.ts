@@ -5,6 +5,9 @@ import { NodeId } from '../../../domain/value-objects/NodeId';
 import { NodeType } from '../../../domain/value-objects/NodeType';
 import { Position } from '../../../domain/value-objects/Position';
 import { InMemoryNodeRepository } from '../../fakes/InMemoryNodeRepository';
+import { ProjectId } from '../../../domain/value-objects/ProjectId';
+
+const PROJECT_ID = ProjectId.from('11111111-1111-4111-8111-111111111111');
 
 describe('MoveNode', () => {
   it('moves an existing node', async () => {
@@ -14,6 +17,7 @@ describe('MoveNode', () => {
       type: NodeType.from('system'),
       label: 'System',
       position: Position.origin(),
+      projectId: PROJECT_ID,
     });
     await repository.save(node);
 

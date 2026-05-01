@@ -43,7 +43,7 @@ export class AddNode {
       position: Position.from(input.x ?? 0, input.y ?? 0),
     });
 
-    await this.nodeRepository.save(node, projectId);
+    await this.nodeRepository.save(node);
 
     return { node };
   }

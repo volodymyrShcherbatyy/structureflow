@@ -6,6 +6,7 @@ import {
   NodeChange,
 } from '@xyflow/react';
 import { create } from 'zustand';
+import { ReactNode } from 'react';
 
 import { FlowEdgeData } from '../canvas/mappers/edgeMapper';
 import { FlowNodeData } from '../canvas/mappers/nodeMapper';
@@ -24,7 +25,7 @@ type CanvasEdge = {
   id: string;
   source: string;
   target: string;
-  label?: string;
+  label?: ReactNode;
   data?: FlowEdgeData;
   sourceHandle?: string;
   targetHandle?: string;
@@ -240,7 +241,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       sourceId: typedEdge.source,
       targetId: typedEdge.target,
       edgeType,
-      label: typedEdge.label,
+      label: typeof typedEdge.label === 'string' ? typedEdge.label : undefined,
       sourceHandle: pendingConnection.sourceHandle ?? undefined,
       targetHandle: pendingConnection.targetHandle ?? undefined,
     });
