@@ -15,6 +15,7 @@ import { PrismaNodeRepository } from '../../../../infrastructure/persistence/pri
 import { PrismaProjectRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaProjectRepository';
 import { coreEdgeToFlow } from '../../../../presentation/canvas/mappers/edgeMapper';
 import { coreNodeToFlow } from '../../../../presentation/canvas/mappers/nodeMapper';
+import { PrismaPortRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaPortRepository';
 
 async function assertOwnership(projectId: string) {
   const userId = await getUserId();
@@ -33,6 +34,7 @@ async function assertOwnership(projectId: string) {
   return {
     nodeRepository: new PrismaNodeRepository(prisma),
     edgeRepository: new PrismaEdgeRepository(prisma),
+    portRepository: new PrismaPortRepository(prisma),
     projectRepository,
   };
 }
@@ -48,8 +50,8 @@ type AddNodeInput = {
 };
 
 export async function addNodeAction(input: AddNodeInput) {
-  const { nodeRepository, projectRepository } = await assertOwnership(input.projectId);
-  const addNode = new AddNode(projectRepository, nodeRepository);
+  const { nodeRepository, portRepository, projectRepository } = await assertOwnership(input.projectId);
+  const addNode = new AddNode(projectRepository, nodeRepository, portRepository);
   const nestNode = new NestNode(nodeRepository);
 
     const { node } = await addNode.execute({
