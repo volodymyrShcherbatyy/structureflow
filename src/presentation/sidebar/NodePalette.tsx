@@ -14,17 +14,17 @@ export function NodePalette() {
   const nodes = useCanvasStore((state) => state.nodes);
 
   const parentNode = currentScopeId
-    ? nodes.find((n) => n.id === currentScopeId)
+    ? nodes.find((node) => node.id === currentScopeId && node.type !== 'portNode')
     : null;
 
-  const parentType = parentNode?.data.nodeType ?? null;
+  const parentType = parentNode && 'nodeType' in parentNode.data ? parentNode.data.nodeType : null;
 
   const handleCreateNode = async (type: (typeof NODE_TYPES)[number]) => {
     if (!projectId) {
       return;
     }
 
-    const { node } = await addNodeAction({
+    const { node, ports } = await addNodeAction({
       projectId,
       type,
       label: `${type} node`,
@@ -35,6 +35,7 @@ export function NodePalette() {
     });
 
     addNode(node);
+    ports.forEach((port) => addNode(port));
   };
 
   const ALLOWED_CHILDREN: Record<string, string[]> = {

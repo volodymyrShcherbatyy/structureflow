@@ -7,6 +7,7 @@ import {
   deleteEdgeAction,
   deleteNodeAction,
   moveNodeAction,
+  movePortAction,
   renameNodeAction,
 } from '../../../app/(protected)/project/[id]/actions';
 import { PendingChange, useCanvasStore } from '../../stores/canvasStore';
@@ -17,6 +18,11 @@ const DEBOUNCE_MS = 1000;
 async function processChange(change: PendingChange, projectId: string) {
   if (change.type === 'move') {
     await moveNodeAction({ projectId, nodeId: change.nodeId, x: change.x, y: change.y });
+    return;
+  }
+
+  if (change.type === 'move-port') {
+    await movePortAction({ projectId, portId: change.portId, x: change.x, y: change.y });
     return;
   }
 

@@ -41,14 +41,57 @@ function FlowCanvasContent() {
   const toggleTrace = useCanvasStore(state => state.toggleTrace);
 
   const visibleNodes = useMemo(
-    () => nodes.filter((node) => (currentScopeId ? node.parentId === currentScopeId : !node.parentId)),
+    () =>
+      nodes.filter((node) => {
+        if (node.type === 'portNode') {
+          return currentScopeId && 'nodeId' in node.data
+            ? node.data.nodeId === currentScopeId
+            : false;
+        }
+
+        return currentScopeId ? node.parentId === currentScopeId : !node.parentId;
+      }),
     [currentScopeId, nodes],
   );
 
   const visibleNodeIds = useMemo(() => new Set(visibleNodes.map((node) => node.id)), [visibleNodes]);
 
   const visibleEdges = useMemo(
-    () => edges.filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)),
+    () =>
+      edges
+        .map((edge) => {
+          const sourceVisible = visibleNodeIds.has(edge.source);
+          const targetVisible = visibleNodeIds.has(edge.target);
+
+          const sourcePortId =
+            !sourceVisible && edge.sourceHandle
+              ? `${edge.source}:${edge.sourceHandle}`
+              : edge.source;
+
+          const targetPortId =
+            !targetVisible && edge.targetHandle
+              ? `${edge.target}:${edge.targetHandle}`
+              : edge.target;
+
+          const source = sourceVisible
+            ? edge.source
+            : visibleNodeIds.has(sourcePortId)
+              ? sourcePortId
+              : edge.source;
+
+          const target = targetVisible
+            ? edge.target
+            : visibleNodeIds.has(targetPortId)
+              ? targetPortId
+              : edge.target;
+
+          return {
+            ...edge,
+            source,
+            target,
+          };
+        })
+        .filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)),
     [edges, visibleNodeIds],
   );
 

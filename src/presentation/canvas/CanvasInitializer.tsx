@@ -10,12 +10,14 @@ import { FlowNodeData } from './mappers/nodeMapper';
 import { Breadcrumb } from '../navigation/Breadcrumb';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useScopeStore } from '../stores/scopeStore';
+import { FlowPortData } from './mappers/portMapper';
 
 type CanvasInitializerProps = {
   projectId: string;
   projectName: string;
   initialNodes: Node<FlowNodeData>[];
   initialEdges: Edge<FlowEdgeData>[];
+  initialPorts: Node<FlowPortData>[];
 };
 
 function CanvasContent() {
@@ -34,6 +36,7 @@ export function CanvasInitializer({
   projectName,
   initialNodes,
   initialEdges,
+  initialPorts,
 }: CanvasInitializerProps) {
   const initCanvas = useCanvasStore((state) => state.initCanvas);
   const setProjectId = useScopeStore((state) => state.setProjectId);
@@ -43,9 +46,9 @@ export function CanvasInitializer({
     useScopeStore.getState().resetScope();
     setProjectId(projectId);
     setProjectName(projectName);
-    initCanvas(initialNodes, initialEdges);
-  }, [projectId, projectName, initialNodes, initialEdges, initCanvas, setProjectId, setProjectName]);
-
+    initCanvas([...initialNodes, ...initialPorts], initialEdges);
+  }, [projectId, projectName, initialNodes, initialEdges, initialPorts, initCanvas, setProjectId, setProjectName]);
+  
   return (
     <ReactFlowProvider>
       <CanvasContent />
