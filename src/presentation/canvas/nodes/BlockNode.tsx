@@ -1,9 +1,9 @@
 'use client';
 
-import { Handle, NodeProps, Position } from '@xyflow/react';
 import { KeyboardEvent, MouseEvent, useMemo, useState } from 'react';
 
 import { FlowNodeData } from '../mappers/nodeMapper';
+import { MovableBoundaryHandle } from './MovableBoundaryHandle';
 import { useCanvasStore } from '../../stores/canvasStore';
 import { useScopeStore } from '../../stores/scopeStore';
 
@@ -15,17 +15,67 @@ const TYPE_COLORS: Record<string, { header: string; border: string; background: 
   external: { header: '#374151', border: '#d1d5db', background: '#f9fafb' },
 };
 
+type BoundarySide = 'top' | 'right' | 'bottom' | 'left';
+
+type BoundaryHandleConfig = {
+  side: BoundarySide;
+  type: 'source' | 'target';
+  color: string;
+};
+
 type BlockNodeProps = {
   id: string;
   data: FlowNodeData;
   selected: boolean;
 };
 
+const BOUNDARY_HANDLES: BoundaryHandleConfig[] = [
+  {
+    side: 'top',
+    type: 'target',
+    color: '#16a34a',
+  },
+  {
+    side: 'left',
+    type: 'target',
+    color: '#16a34a',
+  },
+  {
+    side: 'bottom',
+    type: 'source',
+    color: '#dc2626',
+  },
+  {
+    side: 'right',
+    type: 'source',
+    color: '#dc2626',
+  },
+];
+
+function getPortForSide(
+  nodes: ReturnType<typeof useCanvasStore.getState>['nodes'],
+  nodeId: string,
+  side: BoundarySide,
+) {
+  return nodes.find(
+    (node) =>
+      node.type === 'portNode' &&
+      'nodeId' in node.data &&
+      'side' in node.data &&
+      node.data.nodeId === nodeId &&
+      node.data.side === side,
+  );
+}
+
 export function BlockNode({ id, data, selected }: BlockNodeProps) {
   const nodes = useCanvasStore((state) => state.nodes);
   const updateNodeLabel = useCanvasStore((state) => state.updateNodeLabel);
+  const updateExternalHandleOffset = useCanvasStore(
+    (state) => state.updateExternalHandleOffset,
+  );
   const addPendingChange = useCanvasStore((state) => state.addPendingChange);
   const drillInto = useScopeStore((state) => state.drillInto);
+
   const [editing, setEditing] = useState(false);
   const [draftLabel, setDraftLabel] = useState(data.label);
 
@@ -80,23 +130,50 @@ export function BlockNode({ id, data, selected }: BlockNodeProps) {
         minWidth: 180,
         border: selected ? '2px solid #6366f1' : `1px solid ${color.border}`,
         borderRadius: 10,
-        overflow: 'visible', // ← одразу підготуємо для handles
+        overflow: 'visible',
         background: color.background,
         boxShadow: selected ? '0 4px 12px rgba(99,102,241,0.25)' : '0 1px 3px rgba(0,0,0,0.08)',
         cursor: 'zoom-in',
         transform: selected ? 'scale(1.02)' : 'scale(1)',
         transition: 'all 0.15s ease',
+        position: 'relative',
       }}
     >
-      <Handle id="top" type="target" position={Position.Top} 
-        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
-      <Handle id="left" type="target" position={Position.Left} 
-        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
-      <Handle id="bottom" type="source" position={Position.Bottom} 
-        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
-      <Handle id="right" type="source" position={Position.Right} 
-        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
-        
+      {BOUNDARY_HANDLES.map((handle) => {
+        const port = getPortForSide(nodes, id, handle.side);
+
+        const portId =
+          port && 'portId' in port.data ? port.data.portId : `${id}:${handle.side}`;
+
+        const offset =
+          port && 'externalHandleOffset' in port.data
+            ? port.data.externalHandleOffset
+            : 0.5;
+
+        return (
+          <MovableBoundaryHandle
+            key={handle.side}
+            nodeId={id}
+            portId={portId}
+            side={handle.side}
+            type={handle.type}
+            offset={offset}
+            color={handle.color}
+            onOffsetChange={(nextPortId, nextOffset) => {
+              updateExternalHandleOffset(nextPortId, nextOffset);
+            }}
+            onOffsetCommit={(nextPortId, nextOffset) => {
+              updateExternalHandleOffset(nextPortId, nextOffset);
+              addPendingChange({
+                type: 'move-external-handle',
+                portId: nextPortId,
+                offset: nextOffset,
+              });
+            }}
+          />
+        );
+      })}
+
       <header
         style={{
           background: color.header,

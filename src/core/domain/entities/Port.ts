@@ -10,6 +10,7 @@ export type PortProps = {
   projectId: ProjectId;
   side: PortSide;
   position: Position;
+  externalHandleOffset?: number;
 };
 
 export class Port {
@@ -18,6 +19,7 @@ export class Port {
   public readonly projectId: ProjectId;
   public readonly side: PortSide;
   public readonly position: Position;
+  public readonly externalHandleOffset: number;
 
   constructor(props: PortProps) {
     this.id = props.id;
@@ -25,6 +27,9 @@ export class Port {
     this.projectId = props.projectId;
     this.side = props.side;
     this.position = props.position;
+    this.externalHandleOffset = Port.normalizeExternalHandleOffset(
+      props.externalHandleOffset ?? 0.5,
+    );
   }
 
   static createDefaultForNode(input: {
@@ -32,6 +37,7 @@ export class Port {
     projectId: ProjectId;
     side: PortSide;
     position: Position;
+    externalHandleOffset?: number;
   }): Port {
     return new Port({
       id: PortId.fromNodeAndSide(input.nodeId.toString(), input.side.toString()),
@@ -39,6 +45,7 @@ export class Port {
       projectId: input.projectId,
       side: input.side,
       position: input.position,
+      externalHandleOffset: input.externalHandleOffset ?? 0.5,
     });
   }
 
@@ -47,5 +54,24 @@ export class Port {
       ...this,
       position,
     });
+  }
+
+  moveExternalHandleTo(offset: number): Port {
+    return new Port({
+      ...this,
+      externalHandleOffset: offset,
+    });
+  }
+
+  private static normalizeExternalHandleOffset(offset: number): number {
+    if (!Number.isFinite(offset)) {
+      throw new Error('External handle offset must be a finite number');
+    }
+
+    if (offset < 0 || offset > 1) {
+      throw new Error('External handle offset must be between 0 and 1');
+    }
+
+    return offset;
   }
 }

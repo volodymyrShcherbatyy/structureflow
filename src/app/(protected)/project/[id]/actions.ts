@@ -17,6 +17,7 @@ import { coreEdgeToFlow } from '../../../../presentation/canvas/mappers/edgeMapp
 import { coreNodeToFlow } from '../../../../presentation/canvas/mappers/nodeMapper';
 import { PrismaPortRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaPortRepository';
 import { MovePort } from '../../../../core/application/use-cases/port/MovePort';
+import { MovePortExternalHandle } from '../../../../core/application/use-cases/port/MovePortExternalHandle';
 import { corePortToFlow } from '../../../../presentation/canvas/mappers/portMapper';
 
 async function assertOwnership(projectId: string) {
@@ -97,6 +98,20 @@ export async function movePortAction(input: { projectId: string; portId: string;
   const movePort = new MovePort(portRepository);
 
   return movePort.execute({ portId: input.portId, x: input.x, y: input.y });
+}
+
+export async function movePortExternalHandleAction(input: {
+  projectId: string;
+  portId: string;
+  offset: number;
+}) {
+  const { portRepository } = await assertOwnership(input.projectId);
+  const movePortExternalHandle = new MovePortExternalHandle(portRepository);
+
+  return movePortExternalHandle.execute({
+    portId: input.portId,
+    offset: input.offset,
+  });
 }
 
 export async function renameNodeAction(input: { projectId: string; nodeId: string; label: string }) {

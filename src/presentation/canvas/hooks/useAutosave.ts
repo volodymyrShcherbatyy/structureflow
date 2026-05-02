@@ -8,6 +8,7 @@ import {
   deleteNodeAction,
   moveNodeAction,
   movePortAction,
+  movePortExternalHandleAction,
   renameNodeAction,
 } from '../../../app/(protected)/project/[id]/actions';
 import { PendingChange, useCanvasStore } from '../../stores/canvasStore';
@@ -23,6 +24,15 @@ async function processChange(change: PendingChange, projectId: string) {
 
   if (change.type === 'move-port') {
     await movePortAction({ projectId, portId: change.portId, x: change.x, y: change.y });
+    return;
+  }
+
+  if (change.type === 'move-external-handle') {
+    await movePortExternalHandleAction({
+      projectId,
+      portId: change.portId,
+      offset: change.offset,
+    });
     return;
   }
 
