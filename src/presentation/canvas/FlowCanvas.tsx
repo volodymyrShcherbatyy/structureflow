@@ -17,6 +17,14 @@ import { useState, useRef } from 'react';
 import { EdgeLegend } from './EdgeLegend';
 import './edgeStyles.css'
 
+function getPortSideFromHandle(handleId?: string | null): string | null {
+  if (!handleId) {
+    return null;
+  }
+
+  return handleId.split(':')[0] || null;
+}
+
 function FlowCanvasContent() {
   const {
     nodes,
@@ -57,41 +65,44 @@ function FlowCanvasContent() {
   const visibleNodeIds = useMemo(() => new Set(visibleNodes.map((node) => node.id)), [visibleNodes]);
 
   const visibleEdges = useMemo(
-    () =>
-      edges
-        .map((edge) => {
-          const sourceVisible = visibleNodeIds.has(edge.source);
-          const targetVisible = visibleNodeIds.has(edge.target);
+  () =>
+    edges
+      .map((edge) => {
+        const sourceVisible = visibleNodeIds.has(edge.source);
+        const targetVisible = visibleNodeIds.has(edge.target);
 
-          const sourcePortId =
-            !sourceVisible && edge.sourceHandle
-              ? `${edge.source}:${edge.sourceHandle}`
-              : edge.source;
+        const sourcePortSide = getPortSideFromHandle(edge.sourceHandle);
+        const targetPortSide = getPortSideFromHandle(edge.targetHandle);
 
-          const targetPortId =
-            !targetVisible && edge.targetHandle
-              ? `${edge.target}:${edge.targetHandle}`
-              : edge.target;
+        const sourcePortId =
+          !sourceVisible && sourcePortSide
+            ? `${edge.source}:${sourcePortSide}`
+            : edge.source;
 
-          const source = sourceVisible
-            ? edge.source
-            : visibleNodeIds.has(sourcePortId)
-              ? sourcePortId
-              : edge.source;
+        const targetPortId =
+          !targetVisible && targetPortSide
+            ? `${edge.target}:${targetPortSide}`
+            : edge.target;
 
-          const target = targetVisible
-            ? edge.target
-            : visibleNodeIds.has(targetPortId)
-              ? targetPortId
-              : edge.target;
+        const source = sourceVisible
+          ? edge.source
+          : visibleNodeIds.has(sourcePortId)
+            ? sourcePortId
+            : edge.source;
 
-          return {
-            ...edge,
-            source,
-            target,
-          };
-        })
-        .filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)),
+        const target = targetVisible
+          ? edge.target
+          : visibleNodeIds.has(targetPortId)
+            ? targetPortId
+            : edge.target;
+
+        return {
+          ...edge,
+          source,
+          target,
+        };
+      })
+      .filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)),
     [edges, visibleNodeIds],
   );
 

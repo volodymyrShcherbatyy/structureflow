@@ -99,7 +99,7 @@ function resolveEndpointForPersistence(
   if (node?.type === 'portNode' && 'nodeId' in node.data) {
     return {
       nodeId: node.data.nodeId,
-      handleId: node.data.side,
+      handleId: handleId ?? node.data.side,
     };
   }
 

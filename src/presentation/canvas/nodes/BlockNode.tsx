@@ -88,14 +88,61 @@ export function BlockNode({ id, data, selected }: BlockNodeProps) {
         transition: 'all 0.15s ease',
       }}
     >
-      <Handle id="top" type="target" position={Position.Top} 
-        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
-      <Handle id="left" type="target" position={Position.Left} 
-        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
-      <Handle id="bottom" type="source" position={Position.Bottom} 
-        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
-      <Handle id="right" type="source" position={Position.Right} 
-        style={{ width: 8, height: 8, background: '#555', pointerEvents: 'all', zIndex: 10,}} />
+      <Handle
+        id="top"
+        type="target"
+        position={Position.Top}
+        style={{
+          width: 8,
+          height: 8,
+          background: '#16a34a',
+          border: '2px solid #ffffff',
+          pointerEvents: 'all',
+          zIndex: 10,
+        }}
+      />
+
+      <Handle
+        id="left"
+        type="target"
+        position={Position.Left}
+        style={{
+          width: 8,
+          height: 8,
+          background: '#16a34a',
+          border: '2px solid #ffffff',
+          pointerEvents: 'all',
+          zIndex: 10,
+        }}
+      />
+
+      <Handle
+        id="bottom"
+        type="source"
+        position={Position.Bottom}
+        style={{
+          width: 8,
+          height: 8,
+          background: '#dc2626',
+          border: '2px solid #ffffff',
+          pointerEvents: 'all',
+          zIndex: 10,
+        }}
+      />
+
+      <Handle
+        id="right"
+        type="source"
+        position={Position.Right}
+        style={{
+          width: 8,
+          height: 8,
+          background: '#dc2626',
+          border: '2px solid #ffffff',
+          pointerEvents: 'all',
+          zIndex: 10,
+        }}
+      />
         
       <header
         style={{
