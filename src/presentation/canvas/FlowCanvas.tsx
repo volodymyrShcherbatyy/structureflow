@@ -41,7 +41,16 @@ function FlowCanvasContent() {
   const toggleTrace = useCanvasStore(state => state.toggleTrace);
 
   const visibleNodes = useMemo(
-    () => nodes.filter((node) => (currentScopeId ? node.parentId === currentScopeId : !node.parentId)),
+    () =>
+      nodes.filter((node) => {
+        if (node.type === 'portNode') {
+          return currentScopeId && 'nodeId' in node.data
+            ? node.data.nodeId === currentScopeId
+            : false;
+        }
+
+        return currentScopeId ? node.parentId === currentScopeId : !node.parentId;
+      }),
     [currentScopeId, nodes],
   );
 

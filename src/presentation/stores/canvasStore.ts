@@ -10,15 +10,17 @@ import { ReactNode } from 'react';
 
 import { FlowEdgeData } from '../canvas/mappers/edgeMapper';
 import { FlowNodeData } from '../canvas/mappers/nodeMapper';
+import { FlowPortData } from '../canvas/mappers/portMapper';
 import { Connection } from '@xyflow/react';
 import { getEdgeStyle, isAnimated } from '../canvas/edgeStyles';
 
 type CanvasNode = {
   id: string;
   position: { x: number; y: number };
-  data: FlowNodeData;
+  data: FlowNodeData | FlowPortData;
   type?: string;
   parentId?: string;
+  style?: React.CSSProperties;
 };
 
 type CanvasEdge = {
@@ -197,20 +199,24 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           : node,
       ),
     })),
+
   updateNodeLabel: (nodeId, label) =>
     set((state) => ({
-      nodes: state.nodes.map((node) =>
-        node.id === nodeId
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                label,
-              },
-            }
-          : node,
-      ),
-    })),
+      nodes: state.nodes.map((node) => {
+        if (node.id !== nodeId || node.type === 'portNode') {
+          return node;
+        }
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            label,
+          },
+        };
+      }),
+  })),
+
   setPendingConnection: (pendingConnection) => set({ pendingConnection }),
   addTypedEdgeFromPending: (edgeType) => {
     const { pendingConnection, edges } = get();

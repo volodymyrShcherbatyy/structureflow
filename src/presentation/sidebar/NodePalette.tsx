@@ -14,10 +14,10 @@ export function NodePalette() {
   const nodes = useCanvasStore((state) => state.nodes);
 
   const parentNode = currentScopeId
-    ? nodes.find((n) => n.id === currentScopeId)
+    ? nodes.find((node) => node.id === currentScopeId && node.type !== 'portNode')
     : null;
 
-  const parentType = parentNode?.data.nodeType ?? null;
+  const parentType = parentNode && 'nodeType' in parentNode.data ? parentNode.data.nodeType : null;
 
   const handleCreateNode = async (type: (typeof NODE_TYPES)[number]) => {
     if (!projectId) {
