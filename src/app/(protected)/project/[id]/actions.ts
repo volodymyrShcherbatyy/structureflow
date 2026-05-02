@@ -16,6 +16,8 @@ import { PrismaProjectRepository } from '../../../../infrastructure/persistence/
 import { coreEdgeToFlow } from '../../../../presentation/canvas/mappers/edgeMapper';
 import { coreNodeToFlow } from '../../../../presentation/canvas/mappers/nodeMapper';
 import { PrismaPortRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaPortRepository';
+import { MovePort } from '../../../../core/application/use-cases/port/MovePort';
+import { corePortToFlow } from '../../../../presentation/canvas/mappers/portMapper';
 
 async function assertOwnership(projectId: string) {
   const userId = await getUserId();
@@ -54,7 +56,7 @@ export async function addNodeAction(input: AddNodeInput) {
   const addNode = new AddNode(projectRepository, nodeRepository, portRepository);
   const nestNode = new NestNode(nodeRepository);
 
-    const { node } = await addNode.execute({
+  const { node, ports } = await addNode.execute({
     projectId: input.projectId,
     type: input.type,
     label: input.label,
@@ -71,10 +73,16 @@ export async function addNodeAction(input: AddNodeInput) {
       throw new Error('Unable to load created node.');
     }
 
-    return { node: coreNodeToFlow(nestedNode, input.projectId) };
+    return {
+      node: coreNodeToFlow(nestedNode, input.projectId),
+      ports: ports.map((port) => corePortToFlow(port)),
+    };
   }
 
-  return { node: coreNodeToFlow(node, input.projectId) };
+  return {
+    node: coreNodeToFlow(node, input.projectId),
+    ports: ports.map((port) => corePortToFlow(port)),
+  };
 }
 
 export async function moveNodeAction(input: { projectId: string; nodeId: string; x: number; y: number }) {
@@ -82,6 +90,13 @@ export async function moveNodeAction(input: { projectId: string; nodeId: string;
   const moveNode = new MoveNode(nodeRepository);
 
   return moveNode.execute({ nodeId: input.nodeId, x: input.x, y: input.y });
+}
+
+export async function movePortAction(input: { projectId: string; portId: string; x: number; y: number }) {
+  const { portRepository } = await assertOwnership(input.projectId);
+  const movePort = new MovePort(portRepository);
+
+  return movePort.execute({ portId: input.portId, x: input.x, y: input.y });
 }
 
 export async function renameNodeAction(input: { projectId: string; nodeId: string; label: string }) {

@@ -44,6 +44,7 @@ type PendingConnection = {
 
 export type PendingChange =
   | { type: 'move'; nodeId: string; x: number; y: number }
+  | { type: 'move-port'; portId: string; x: number; y: number }
   | { type: 'rename'; nodeId: string; label: string }
   | { type: 'delete-node'; nodeId: string }
   | {
@@ -88,6 +89,26 @@ type CanvasStore = {
   toggleTrace: () => void;
 };
 
+function resolveEndpointForPersistence(
+  nodes: CanvasNode[],
+  endpointId: string,
+  handleId?: string | null,
+): { nodeId: string; handleId?: string } {
+  const node = nodes.find((item) => item.id === endpointId);
+
+  if (node?.type === 'portNode' && 'nodeId' in node.data) {
+    return {
+      nodeId: node.data.nodeId,
+      handleId: node.data.side,
+    };
+  }
+
+  return {
+    nodeId: endpointId,
+    handleId: handleId ?? undefined,
+  };
+}
+
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
   nodes: [],
   edges: [],
@@ -121,6 +142,19 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
       changes.forEach((change) => {
         if (change.type === 'position' && change.dragging === false && change.position) {
+          const movedNode = nextNodes.find((node) => node.id === change.id);
+
+          if (movedNode?.type === 'portNode') {
+            get().addPendingChange({
+              type: 'move-port',
+              portId: change.id,
+              x: change.position.x,
+              y: change.position.y,
+            });
+
+            return;
+          }
+
           get().addPendingChange({
             type: 'move',
             nodeId: change.id,
@@ -138,6 +172,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         nodes: nextNodes,
       };
     }),
+
   onEdgesChange: (changes) =>
     set((state) => {
       const nextEdges = applyEdgeChanges(changes as never, state.edges as never) as CanvasEdge[];
@@ -152,6 +187,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         edges: nextEdges,
       };
     }),
+
   onConnect: (connection) => {
   if (!connection.source || !connection.target) {
     return;
@@ -219,18 +255,30 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
   setPendingConnection: (pendingConnection) => set({ pendingConnection }),
   addTypedEdgeFromPending: (edgeType) => {
-    const { pendingConnection, edges } = get();
+    const { pendingConnection, edges, nodes } = get();
 
     if (!pendingConnection) {
       return;
     }
 
+    const sourceEndpoint = resolveEndpointForPersistence(
+      nodes,
+      pendingConnection.source,
+      pendingConnection.sourceHandle,
+    );
+
+    const targetEndpoint = resolveEndpointForPersistence(
+      nodes,
+      pendingConnection.target,
+      pendingConnection.targetHandle,
+    );
+
     const typedEdge: CanvasEdge = {
       id: crypto.randomUUID(),
       source: pendingConnection.source,
       target: pendingConnection.target,
-      sourceHandle: pendingConnection.sourceHandle,
-      targetHandle: pendingConnection.targetHandle,
+      sourceHandle: pendingConnection.sourceHandle ?? undefined,
+      targetHandle: pendingConnection.targetHandle ?? undefined,
       animated: isAnimated(edgeType),
       style: getEdgeStyle(edgeType),
       data: { edgeType },
@@ -244,12 +292,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     get().addPendingChange({
       type: 'connect-edge',
       tempEdgeId: typedEdge.id,
-      sourceId: typedEdge.source,
-      targetId: typedEdge.target,
+      sourceId: sourceEndpoint.nodeId,
+      targetId: targetEndpoint.nodeId,
       edgeType,
       label: typeof typedEdge.label === 'string' ? typedEdge.label : undefined,
-      sourceHandle: pendingConnection.sourceHandle ?? undefined,
-      targetHandle: pendingConnection.targetHandle ?? undefined,
+      sourceHandle: sourceEndpoint.handleId,
+      targetHandle: targetEndpoint.handleId,
     });
   },
   
@@ -258,6 +306,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       if (change.type === 'move') {
         const filtered = state.pendingChanges.filter(
           (pending) => !(pending.type === 'move' && pending.nodeId === change.nodeId),
+        );
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
+
+      if (change.type === 'move-port') {
+        const filtered = state.pendingChanges.filter(
+          (pending) => !(pending.type === 'move-port' && pending.portId === change.portId),
         );
 
         return {

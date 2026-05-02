@@ -24,7 +24,7 @@ export function NodePalette() {
       return;
     }
 
-    const { node } = await addNodeAction({
+    const { node, ports } = await addNodeAction({
       projectId,
       type,
       label: `${type} node`,
@@ -35,6 +35,7 @@ export function NodePalette() {
     });
 
     addNode(node);
+    ports.forEach((port) => addNode(port));
   };
 
   const ALLOWED_CHILDREN: Record<string, string[]> = {

@@ -48,12 +48,19 @@ export class AddNode {
       position: Position.from(input.x ?? 0, input.y ?? 0),
     });
 
-    const ports = PortSide.all().map((side, index) =>
+    const defaultPortPositions: Record<string, Position> = {
+      top: Position.from(400, 40),
+      right: Position.from(960, 300),
+      bottom: Position.from(400, 560),
+      left: Position.from(-160, 300),
+    };
+
+    const ports = PortSide.all().map((side) =>
       Port.createDefaultForNode({
         nodeId: node.id,
         projectId,
         side,
-        position: Position.from(index * 80, 0),
+        position: defaultPortPositions[side.toString()] ?? Position.origin(),
       }),
     );
 

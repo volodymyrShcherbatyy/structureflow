@@ -23,13 +23,13 @@ export function PortNode({ data, selected }: PortNodeProps) {
   return (
     <div
       style={{
-        minWidth: 96,
+        minWidth: 50,
         border: selected ? '2px solid #f97316' : '1px solid #fdba74',
-        borderRadius: 999,
+        borderRadius: 8,
         background: '#fff7ed',
         color: '#9a3412',
-        padding: '8px 12px',
-        fontSize: 12,
+        padding: '22px 6px',
+        fontSize: 10,
         fontWeight: 600,
         textAlign: 'center',
         boxShadow: selected
@@ -41,12 +41,12 @@ export function PortNode({ data, selected }: PortNodeProps) {
       title={`Port: ${label}`}
     >
       <Handle
-        id="target"
+        id={data.side}
         type="target"
         position={Position.Left}
         style={{
-          width: 8,
-          height: 8,
+          width: 12,
+          height: 12,
           background: '#f97316',
           pointerEvents: 'all',
         }}
@@ -55,12 +55,12 @@ export function PortNode({ data, selected }: PortNodeProps) {
       <span>{label} Port</span>
 
       <Handle
-        id="source"
+        id={data.side}
         type="source"
         position={Position.Right}
         style={{
-          width: 8,
-          height: 8,
+          width: 12,
+          height: 12,
           background: '#f97316',
           pointerEvents: 'all',
         }}
