@@ -15,6 +15,7 @@ export class PortMapper {
       projectId: ProjectId.from(record.projectId),
       side: PortSide.from(record.side),
       position: Position.from(record.positionX, record.positionY),
+      externalHandleOffset: record.externalHandleOffset,
     });
   }
 
@@ -24,6 +25,7 @@ export class PortMapper {
       side: port.side.toString(),
       positionX: port.position.x,
       positionY: port.position.y,
+      externalHandleOffset: port.externalHandleOffset,
       nodeId: port.nodeId.toString(),
       projectId: port.projectId.toString(),
     };
@@ -34,6 +36,7 @@ export class PortMapper {
       side: port.side.toString(),
       positionX: port.position.x,
       positionY: port.position.y,
+      externalHandleOffset: port.externalHandleOffset,
       nodeId: port.nodeId.toString(),
       projectId: port.projectId.toString(),
     };

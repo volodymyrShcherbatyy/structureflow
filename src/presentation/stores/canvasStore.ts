@@ -45,6 +45,7 @@ type PendingConnection = {
 export type PendingChange =
   | { type: 'move'; nodeId: string; x: number; y: number }
   | { type: 'move-port'; portId: string; x: number; y: number }
+  | { type: 'move-external-handle'; portId: string; offset: number }
   | { type: 'rename'; nodeId: string; label: string }
   | { type: 'delete-node'; nodeId: string }
   | {
@@ -77,6 +78,7 @@ type CanvasStore = {
   replaceEdgeId: (tempEdgeId: string, edgeId: string) => void;
   updateNodePosition: (nodeId: string, x: number, y: number) => void;
   updateNodeLabel: (nodeId: string, label: string) => void;
+  updateExternalHandleOffset: (portId: string, offset: number) => void;
   setPendingConnection: (pendingConnection: PendingConnection | null) => void;
   addTypedEdgeFromPending: (edgeType: string) => void;
   addPendingChange: (change: PendingChange) => void;
@@ -155,6 +157,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
             return;
           }
 
+          
           get().addPendingChange({
             type: 'move',
             nodeId: change.id,
@@ -162,6 +165,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
             y: change.position.y,
           });
         }
+
+        
 
         if (change.type === 'remove') {
           get().addPendingChange({ type: 'delete-node', nodeId: change.id });
@@ -253,6 +258,23 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }),
   })),
 
+  updateExternalHandleOffset: (portId, offset) =>
+  set((state) => ({
+    nodes: state.nodes.map((node) => {
+      if (node.id !== portId || node.type !== 'portNode' || !('externalHandleOffset' in node.data)) {
+        return node;
+      }
+
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          externalHandleOffset: offset,
+        },
+      };
+    }),
+  })),
+
   setPendingConnection: (pendingConnection) => set({ pendingConnection }),
   addTypedEdgeFromPending: (edgeType) => {
     const { pendingConnection, edges, nodes } = get();
@@ -316,6 +338,20 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       if (change.type === 'move-port') {
         const filtered = state.pendingChanges.filter(
           (pending) => !(pending.type === 'move-port' && pending.portId === change.portId),
+        );
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
+
+      if (change.type === 'move-external-handle') {
+        const filtered = state.pendingChanges.filter(
+          (pending) =>
+            !(
+              pending.type === 'move-external-handle' &&
+              pending.portId === change.portId
+            ),
         );
 
         return {

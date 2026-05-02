@@ -8,6 +8,7 @@ export type FlowPortData = {
   nodeId: string;
   projectId: string;
   side: string;
+  externalHandleOffset: number;
 };
 
 export const corePortToFlow = (port: CorePort): FlowNode<FlowPortData> => ({
@@ -23,5 +24,6 @@ export const corePortToFlow = (port: CorePort): FlowNode<FlowPortData> => ({
     nodeId: port.nodeId.toString(),
     projectId: port.projectId.toString(),
     side: port.side.toString(),
+    externalHandleOffset: port.externalHandleOffset,
   },
 });

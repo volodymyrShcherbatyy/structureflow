@@ -10,10 +10,10 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   name          String?
-  email         String   @unique
+  email         String    @unique
   emailVerified DateTime?
   image         String?
-  password      String?   // ← ДОДАТИ
+  password      String? // ← ДОДАТИ
   accounts      Account[]
   sessions      Session[]
   projects      Project[]
@@ -60,7 +60,7 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   nodes Node[]
   edges Edge[]
   ports Port[]
@@ -92,14 +92,15 @@ model Node {
 }
 
 model Port {
-  id        String   @id
-  side      String
-  positionX Float    @default(0)
-  positionY Float    @default(0)
-  nodeId    String
-  projectId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                   String   @id
+  side                 String
+  positionX            Float    @default(0)
+  positionY            Float    @default(0)
+  externalHandleOffset Float    @default(0.5)
+  nodeId               String
+  projectId            String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   node    Node    @relation(fields: [nodeId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -110,16 +111,16 @@ model Port {
 }
 
 model Edge {
-  id        String   @id @default(uuid())
-  type      String
-  label     String?
-  projectId String
-  sourceId  String
-  targetId  String
+  id           String   @id @default(uuid())
+  type         String
+  label        String?
+  projectId    String
+  sourceId     String
+  targetId     String
   sourceHandle String?
   targetHandle String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   source  Node    @relation("EdgeSource", fields: [sourceId], references: [id], onDelete: Cascade)

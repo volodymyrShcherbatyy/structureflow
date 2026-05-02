@@ -169,8 +169,8 @@ export function PortNode({ data, selected }: PortNodeProps) {
         position={internalHandle.position}
         title={`${label} Internal (${internalHandle.type})`}
         style={{
-          width: 12,
-          height: 12,
+          width: 24,
+          height: 24,
           background: internalHandle.color,
           border: '2px solid #ffffff',
           pointerEvents: 'all',
