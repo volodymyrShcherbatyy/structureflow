@@ -2,7 +2,7 @@ import { Edge as FlowEdge, MarkerType } from '@xyflow/react';
 
 import { Edge as CoreEdge } from '../../../core/domain/entities/Edge';
 import { EdgeType } from '../../../core/domain/value-objects/EdgeType';
-import { getEdgeStyle, isAnimated } from '../edgeStyles';
+import { getEdgeStyle, getEdgeStyleConfig, isAnimated } from '../edgeStyles';
 
 export type FlowEdgeData = {
   edgeType: string;
@@ -21,6 +21,8 @@ export type FlowEdgeToCoreDto = {
 export const coreEdgeToFlow = (edge: CoreEdge): FlowEdge<FlowEdgeData> => {
   const edgeType = edge.type.toString();
   const style = getEdgeStyle(edgeType);
+  const styleConfig = getEdgeStyleConfig(edgeType);
+  const markerSize = styleConfig.markerSize ?? 18;
 
   return {
     id: edge.id.toString(),
@@ -32,7 +34,9 @@ export const coreEdgeToFlow = (edge: CoreEdge): FlowEdge<FlowEdgeData> => {
     animated: isAnimated(edgeType),
     markerEnd: {
       type: MarkerType.ArrowClosed,
-      color: style.stroke,
+      color: styleConfig.stroke,
+      width: markerSize,
+      height: markerSize,
     },
     style,
     data: {

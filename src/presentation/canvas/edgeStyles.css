@@ -1,4 +1,17 @@
+.react-flow__edge path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.react-flow__edge:hover path {
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.18));
+}
+
 .react-flow__edge.selected path {
   stroke-width: 3px;
-  filter: drop-shadow(0 0 8px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
+}
+
+.react-flow__edge.animated path {
+  stroke-dasharray: 8;
 }
