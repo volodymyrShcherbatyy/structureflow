@@ -2,7 +2,7 @@
 
 import '@xyflow/react/dist/style.css';
 
-import { Background, Controls, MiniMap, ReactFlow, useReactFlow } from '@xyflow/react';
+import { Background, Controls, MiniMap, ReactFlow, useReactFlow, ViewportPortal } from '@xyflow/react';
 import { useEffect, useMemo } from 'react';
 
 import { EdgeTypeSelector } from './edges/EdgeTypeSelector';
@@ -17,6 +17,7 @@ import { useState, useRef } from 'react';
 import { EdgeLegend } from './EdgeLegend';
 import './edgeStyles.css'
 
+
 function getPortSideFromHandle(handleId?: string | null): string | null {
   if (!handleId) {
     return null;
@@ -24,6 +25,138 @@ function getPortSideFromHandle(handleId?: string | null): string | null {
 
   return handleId.split(':')[0] || null;
 }
+
+
+type ScopeBoundaryPortNode = {
+  id: string;
+  type?: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  data: unknown;
+};
+
+type ScopeBoundaryFrameProps = {
+  currentScopeId: string | null;
+  visibleNodes: ScopeBoundaryPortNode[];
+};
+
+type PortSide = 'top' | 'right' | 'bottom' | 'left';
+
+const PORT_NODE_WIDTH = 74;
+const PORT_NODE_HEIGHT = 62;
+
+function isPortSide(value: string | undefined): value is PortSide {
+  return value === 'top' || value === 'right' || value === 'bottom' || value === 'left';
+}
+
+function getScopePorts(
+  currentScopeId: string | null,
+  visibleNodes: ScopeBoundaryPortNode[],
+): Map<PortSide, ScopeBoundaryPortNode> {
+  const portsBySide = new Map<PortSide, ScopeBoundaryPortNode>();
+
+  if (!currentScopeId) {
+    return portsBySide;
+  }
+
+  visibleNodes.forEach((node) => {
+    if (node.type !== 'portNode') {
+      return;
+    }
+
+    if (!node.data || typeof node.data !== 'object') {
+      return;
+    }
+
+    const data = node.data as {
+      nodeId?: unknown;
+      side?: unknown;
+    };
+
+    if (
+      data.nodeId !== currentScopeId ||
+      typeof data.side !== 'string' ||
+      !isPortSide(data.side)
+    ) {
+      return;
+    }
+
+    portsBySide.set(data.side, node);
+  });
+
+  return portsBySide;
+}
+
+function getNodeCenter(node: ScopeBoundaryPortNode): { x: number; y: number } {
+  return {
+    x: node.position.x + PORT_NODE_WIDTH / 2,
+    y: node.position.y + PORT_NODE_HEIGHT / 2,
+  };
+}
+
+function ScopeBoundaryFrame({ currentScopeId, visibleNodes }: ScopeBoundaryFrameProps) {
+  const portsBySide = getScopePorts(currentScopeId, visibleNodes);
+
+  const top = portsBySide.get('top');
+  const right = portsBySide.get('right');
+  const bottom = portsBySide.get('bottom');
+  const left = portsBySide.get('left');
+
+  if (!top || !right || !bottom || !left) {
+    return null;
+  }
+
+  const topCenter = getNodeCenter(top);
+  const rightCenter = getNodeCenter(right);
+  const bottomCenter = getNodeCenter(bottom);
+  const leftCenter = getNodeCenter(left);
+
+  const leftX = leftCenter.x;
+  const rightX = rightCenter.x;
+  const topY = topCenter.y;
+  const bottomY = bottomCenter.y;
+
+  const x = Math.min(leftX, rightX);
+  const y = Math.min(topY, bottomY);
+  const width = Math.abs(rightX - leftX);
+  const height = Math.abs(bottomY - topY);
+
+  if (width < 40 || height < 40) {
+    return null;
+  }
+
+  return (
+    <ViewportPortal>
+      <svg
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y,
+          width,
+          height,
+          overflow: 'visible',
+          pointerEvents: 'none',
+          zIndex: -999,
+        }}
+      >
+        <rect
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          fill="none"
+          stroke="rgba(18, 17, 17, 0.75)"
+          strokeWidth={1}
+          strokeDasharray="8 6"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </ViewportPortal>
+  );
+}
+
 
 function FlowCanvasContent() {
   const {
@@ -106,6 +239,8 @@ function FlowCanvasContent() {
     [edges, visibleNodeIds],
   );
 
+  
+
   const tracedEdges = useMemo(() => {
     if (!isTraceEnabled || !selectedNodeId) return visibleEdges;
 
@@ -123,6 +258,8 @@ function FlowCanvasContent() {
       };
     });
   }, [visibleEdges, selectedNodeId]);
+
+  
 
   const tracedNodes = useMemo(() => {
   if (!isTraceEnabled || !selectedNodeId) return visibleNodes;
@@ -294,6 +431,10 @@ function FlowCanvasContent() {
             }}
             onPaneClick={() => setSelectedNode(null)}
           >
+            <ScopeBoundaryFrame
+              currentScopeId={currentScopeId}
+              visibleNodes={visibleNodes}
+            />
         
             <MiniMap />
             <Controls />
