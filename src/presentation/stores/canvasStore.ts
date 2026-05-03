@@ -3,6 +3,8 @@ import {
   applyEdgeChanges,
   applyNodeChanges,
   EdgeChange,
+  EdgeMarkerType,
+  MarkerType,
   NodeChange,
 } from '@xyflow/react';
 import { create } from 'zustand';
@@ -12,7 +14,7 @@ import { FlowEdgeData } from '../canvas/mappers/edgeMapper';
 import { FlowNodeData } from '../canvas/mappers/nodeMapper';
 import { FlowPortData } from '../canvas/mappers/portMapper';
 import { Connection } from '@xyflow/react';
-import { getEdgeStyle, isAnimated } from '../canvas/edgeStyles';
+import { getEdgeStyle, getEdgeStyleConfig, isAnimated } from '../canvas/edgeStyles';
 
 type CanvasNode = {
   id: string;
@@ -33,6 +35,7 @@ type CanvasEdge = {
   targetHandle?: string;
   animated?: boolean;
   style?: React.CSSProperties;
+  markerEnd?: EdgeMarkerType;
 };
 
 type PendingConnection = {
@@ -111,6 +114,59 @@ function resolveEndpointForPersistence(
   };
 }
 
+function getEdgeType(edge: CanvasEdge): string {
+  return edge.data?.edgeType ?? 'dependency';
+}
+
+function applyEdgeVisuals(edge: CanvasEdge): CanvasEdge {
+  const edgeType = getEdgeType(edge);
+  const edgeStyleConfig = getEdgeStyleConfig(edgeType);
+  const markerSize = edgeStyleConfig.markerSize ?? 18;
+
+  return {
+    ...edge,
+    animated: isAnimated(edgeType),
+    style: {
+      ...getEdgeStyle(edgeType),
+      ...(typeof edge.style === 'object' && edge.style !== null ? edge.style : {}),
+    },
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: edgeStyleConfig.stroke,
+      width: markerSize,
+      height: markerSize,
+    },
+    data: {
+      ...edge.data,
+      edgeType,
+    },
+  };
+}
+
+function isPortNode(node: CanvasNode | undefined): boolean {
+  return node?.type === 'portNode';
+}
+
+function isEdgeConnectedToNode(edge: CanvasEdge, nodeId: string): boolean {
+  return (
+    edge.source === nodeId ||
+    edge.target === nodeId ||
+    edge.source.startsWith(`${nodeId}:`) ||
+    edge.target.startsWith(`${nodeId}:`)
+  );
+}
+
+function isEdgeConnectedToAnyDeletedNode(
+  edge: CanvasEdge,
+  pendingChanges: PendingChange[],
+): boolean {
+  return pendingChanges.some(
+    (pending) =>
+      pending.type === 'delete-node' &&
+      isEdgeConnectedToNode(edge, pending.nodeId),
+  );
+}
+
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
   nodes: [],
   edges: [],
@@ -121,14 +177,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   selectedNodeId: null,
   setSelectedNode: (nodeId) => set({ selectedNodeId: nodeId }),
   initCanvas: (nodes, edges) =>
-    set({
-      nodes,
-      edges,
-      pendingChanges: [],
-      pendingConnection: null,
-      isSaving: false,
-      lastSavedAt: null,
-    }),
+  set({
+    nodes,
+    edges: edges.map(applyEdgeVisuals),
+    pendingChanges: [],
+    pendingConnection: null,
+    isSaving: false,
+    lastSavedAt: null,
+  }),
 
     isTraceEnabled: false,
 
@@ -139,59 +195,86 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       })),
 
   onNodesChange: (changes) =>
-    set((state) => {
-      const nextNodes = applyNodeChanges(changes as never, state.nodes as never) as CanvasNode[];
+  set((state) => {
+    const safeChanges = changes.filter((change) => {
+      if (change.type !== 'remove') {
+        return true;
+      }
 
-      changes.forEach((change) => {
-        if (change.type === 'position' && change.dragging === false && change.position) {
-          const movedNode = nextNodes.find((node) => node.id === change.id);
+      const node = state.nodes.find((item) => item.id === change.id);
 
-          if (movedNode?.type === 'portNode') {
-            get().addPendingChange({
-              type: 'move-port',
-              portId: change.id,
-              x: change.position.x,
-              y: change.position.y,
-            });
+      return !isPortNode(node);
+    });
 
-            return;
-          }
+    const nextNodes = applyNodeChanges(
+      safeChanges as never,
+      state.nodes as never,
+    ) as CanvasNode[];
 
-          
+    safeChanges.forEach((change) => {
+      if (change.type === 'position' && change.dragging === false && change.position) {
+        const movedNode = nextNodes.find((node) => node.id === change.id);
+
+        if (movedNode?.type === 'portNode') {
           get().addPendingChange({
-            type: 'move',
-            nodeId: change.id,
+            type: 'move-port',
+            portId: change.id,
             x: change.position.x,
             y: change.position.y,
           });
+
+          return;
         }
 
-        
+        get().addPendingChange({
+          type: 'move',
+          nodeId: change.id,
+          x: change.position.x,
+          y: change.position.y,
+        });
+      }
 
-        if (change.type === 'remove') {
-          get().addPendingChange({ type: 'delete-node', nodeId: change.id });
-        }
-      });
+      if (change.type === 'remove') {
+        get().addPendingChange({ type: 'delete-node', nodeId: change.id });
+      }
+    });
 
-      return {
-        nodes: nextNodes,
-      };
-    }),
+    return {
+      nodes: nextNodes,
+    };
+  }),
 
   onEdgesChange: (changes) =>
-    set((state) => {
-      const nextEdges = applyEdgeChanges(changes as never, state.edges as never) as CanvasEdge[];
+  set((state) => {
+    const nextEdges = applyEdgeChanges(
+      changes as never,
+      state.edges as never,
+    ) as CanvasEdge[];
 
-      changes.forEach((change) => {
-        if (change.type === 'remove') {
-          get().addPendingChange({ type: 'delete-edge', edgeId: change.id });
-        }
-      });
+    changes.forEach((change) => {
+      if (change.type !== 'remove') {
+        return;
+      }
 
-      return {
-        edges: nextEdges,
-      };
-    }),
+      const edge = state.edges.find((item) => item.id === change.id);
+
+      if (!edge) {
+        return;
+      }
+
+      if (isEdgeConnectedToAnyDeletedNode(edge, state.pendingChanges)) {
+        return;
+      }
+
+      get().addPendingChange({ type: 'delete-edge', edgeId: change.id });
+    });
+
+    return {
+      edges: nextEdges,
+    };
+  }),
+
+
 
   onConnect: (connection) => {
   if (!connection.source || !connection.target) {
@@ -295,6 +378,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       pendingConnection.targetHandle,
     );
 
+    const edgeStyleConfig = getEdgeStyleConfig(edgeType);
+    const markerSize = edgeStyleConfig.markerSize ?? 18;
+
     const typedEdge: CanvasEdge = {
       id: crypto.randomUUID(),
       source: pendingConnection.source,
@@ -303,8 +389,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       targetHandle: pendingConnection.targetHandle ?? undefined,
       animated: isAnimated(edgeType),
       style: getEdgeStyle(edgeType),
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: edgeStyleConfig.stroke,
+        width: markerSize,
+        height: markerSize,
+      },
       data: { edgeType },
     };
+
+    
 
     set({
       edges: addFlowEdge(typedEdge as never, edges as never) as CanvasEdge[],
@@ -370,13 +464,27 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
 
       if (change.type === 'delete-node') {
+        const connectedEdgeIds = state.edges
+          .filter((edge) => isEdgeConnectedToNode(edge, change.nodeId))
+          .map((edge) => edge.id);
+
         const filtered = state.pendingChanges.filter((pending) => {
           if ('nodeId' in pending && pending.nodeId === change.nodeId) {
             return false;
           }
 
-          if (pending.type === 'connect-edge') {
-            return pending.sourceId !== change.nodeId && pending.targetId !== change.nodeId;
+          if (
+            pending.type === 'connect-edge' &&
+            (pending.sourceId === change.nodeId || pending.targetId === change.nodeId)
+          ) {
+            return false;
+          }
+
+          if (
+            pending.type === 'delete-edge' &&
+            connectedEdgeIds.includes(pending.edgeId)
+          ) {
+            return false;
           }
 
           return true;
@@ -386,6 +494,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           pendingChanges: [...filtered, change],
         };
       }
+      
 
       if (change.type === 'delete-edge') {
         const pendingConnect = state.pendingChanges.find(
