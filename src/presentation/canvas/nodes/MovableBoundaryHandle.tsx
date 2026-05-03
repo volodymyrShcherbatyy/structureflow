@@ -17,8 +17,8 @@ type MovableBoundaryHandleProps = {
   onOffsetCommit: (portId: string, offset: number) => void;
 };
 
-const HANDLE_LONG_SIZE = 12;
-const HANDLE_SHORT_SIZE = 5;
+const HANDLE_LONG_SIZE = 16;
+const HANDLE_SHORT_SIZE = 8;
 
 function clampOffset(offset: number): number {
   return Math.min(1, Math.max(0, offset));
@@ -93,7 +93,7 @@ function getHandleStyle(side: BoundarySide, color: string): React.CSSProperties 
   return {
     width: isHorizontal ? HANDLE_LONG_SIZE : HANDLE_SHORT_SIZE,
     height: isHorizontal ? HANDLE_SHORT_SIZE : HANDLE_LONG_SIZE,
-    borderRadius: 2,
+    borderRadius: 3,
     background: color,
     border: '1px solid #ffffff',
     pointerEvents: 'all',
