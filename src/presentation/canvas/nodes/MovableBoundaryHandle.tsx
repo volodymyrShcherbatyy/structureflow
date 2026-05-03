@@ -17,8 +17,8 @@ type MovableBoundaryHandleProps = {
   onOffsetCommit: (portId: string, offset: number) => void;
 };
 
-const HANDLE_LONG_SIZE = 24;
-const HANDLE_SHORT_SIZE = 12;
+const HANDLE_LONG_SIZE = 12;
+const HANDLE_SHORT_SIZE = 5;
 
 function clampOffset(offset: number): number {
   return Math.min(1, Math.max(0, offset));
@@ -51,7 +51,7 @@ function getContainerStyle(side: BoundarySide, offset: number): React.CSSPropert
         ...base,
         left: percentage,
         top: 0,
-        transform: 'translate(-50%, -50%)',
+        transform: 'translate(-25%, -25%)',
         width: HANDLE_LONG_SIZE,
         height: HANDLE_SHORT_SIZE,
       };
@@ -60,7 +60,7 @@ function getContainerStyle(side: BoundarySide, offset: number): React.CSSPropert
         ...base,
         left: percentage,
         bottom: 0,
-        transform: 'translate(-50%, 50%)',
+        transform: 'translate(-25%, 25%)',
         width: HANDLE_LONG_SIZE,
         height: HANDLE_SHORT_SIZE,
       };
@@ -69,7 +69,7 @@ function getContainerStyle(side: BoundarySide, offset: number): React.CSSPropert
         ...base,
         left: 0,
         top: percentage,
-        transform: 'translate(-50%, -50%)',
+        transform: 'translate(-25%, -25%)',
         width: HANDLE_SHORT_SIZE,
         height: HANDLE_LONG_SIZE,
       };
@@ -78,7 +78,7 @@ function getContainerStyle(side: BoundarySide, offset: number): React.CSSPropert
         ...base,
         right: 0,
         top: percentage,
-        transform: 'translate(50%, -50%)',
+        transform: 'translate(25%, -25%)',
         width: HANDLE_SHORT_SIZE,
         height: HANDLE_LONG_SIZE,
       };
@@ -88,21 +88,14 @@ function getContainerStyle(side: BoundarySide, offset: number): React.CSSPropert
 function getHandleStyle(side: BoundarySide, color: string): React.CSSProperties {
   const isHorizontal = side === 'top' || side === 'bottom';
 
-  const radius =
-    side === 'top'
-      ? '999px 999px 0 0'
-      : side === 'bottom'
-        ? '0 0 999px 999px'
-        : side === 'left'
-          ? '999px 0 0 999px'
-          : '0 999px 999px 0';
+  
 
   return {
     width: isHorizontal ? HANDLE_LONG_SIZE : HANDLE_SHORT_SIZE,
     height: isHorizontal ? HANDLE_SHORT_SIZE : HANDLE_LONG_SIZE,
-    borderRadius: radius,
+    borderRadius: 2,
     background: color,
-    border: '2px solid #ffffff',
+    border: '1px solid #ffffff',
     pointerEvents: 'all',
     zIndex: 21,
   };
