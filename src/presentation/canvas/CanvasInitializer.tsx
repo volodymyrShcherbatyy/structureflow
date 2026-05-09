@@ -11,6 +11,7 @@ import { Breadcrumb } from '../navigation/Breadcrumb';
 import { useCanvasStore } from '../stores/canvasStore';
 import { useScopeStore } from '../stores/scopeStore';
 import { FlowPortData } from './mappers/portMapper';
+import { FlowchartElementData } from './mappers/flowchartElementMapper';
 
 type CanvasInitializerProps = {
   projectId: string;
@@ -18,6 +19,7 @@ type CanvasInitializerProps = {
   initialNodes: Node<FlowNodeData>[];
   initialEdges: Edge<FlowEdgeData>[];
   initialPorts: Node<FlowPortData>[];
+  initialFlowchartElements: Node<FlowchartElementData>[];
 };
 
 function CanvasContent() {
@@ -37,6 +39,7 @@ export function CanvasInitializer({
   initialNodes,
   initialEdges,
   initialPorts,
+  initialFlowchartElements,
 }: CanvasInitializerProps) {
   const initCanvas = useCanvasStore((state) => state.initCanvas);
   const setProjectId = useScopeStore((state) => state.setProjectId);
@@ -46,8 +49,9 @@ export function CanvasInitializer({
     useScopeStore.getState().resetScope();
     setProjectId(projectId);
     setProjectName(projectName);
-    initCanvas([...initialNodes, ...initialPorts], initialEdges);
-  }, [projectId, projectName, initialNodes, initialEdges, initialPorts, initCanvas, setProjectId, setProjectName]);
+    
+    initCanvas([...initialNodes, ...initialPorts, ...initialFlowchartElements], initialEdges);
+  }, [projectId, projectName, initialNodes, initialEdges, initialPorts, initialFlowchartElements,initCanvas, setProjectId, setProjectName]);
   
   return (
     <ReactFlowProvider>

@@ -10,6 +10,10 @@ import {
   movePortAction,
   movePortExternalHandleAction,
   renameNodeAction,
+  deleteFlowchartElementAction,
+  moveFlowchartElementAction,
+  renameFlowchartElementAction,
+  resizeFlowchartElementAction,
 } from '../../../app/(protected)/project/[id]/actions';
 import { PendingChange, useCanvasStore } from '../../stores/canvasStore';
 import { useScopeStore } from '../../stores/scopeStore';
@@ -43,6 +47,43 @@ async function processChange(change: PendingChange, projectId: string) {
 
   if (change.type === 'delete-node') {
     await deleteNodeAction({ projectId, nodeId: change.nodeId });
+    return;
+  }
+
+  if (change.type === 'move-flowchart-element') {
+    await moveFlowchartElementAction({
+      projectId,
+      elementId: change.elementId,
+      x: change.x,
+      y: change.y,
+    });
+    return;
+  }
+
+  if (change.type === 'rename-flowchart-element') {
+    await renameFlowchartElementAction({
+      projectId,
+      elementId: change.elementId,
+      label: change.label,
+    });
+    return;
+  }
+
+  if (change.type === 'resize-flowchart-element') {
+    await resizeFlowchartElementAction({
+      projectId,
+      elementId: change.elementId,
+      width: change.width,
+      height: change.height,
+    });
+    return;
+  }
+
+  if (change.type === 'delete-flowchart-element') {
+    await deleteFlowchartElementAction({
+      projectId,
+      elementId: change.elementId,
+    });
     return;
   }
 
