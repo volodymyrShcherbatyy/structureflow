@@ -13,6 +13,7 @@ import {
   deleteFlowchartElementAction,
   moveFlowchartElementAction,
   renameFlowchartElementAction,
+  resizeFlowchartElementAction,
 } from '../../../app/(protected)/project/[id]/actions';
 import { PendingChange, useCanvasStore } from '../../stores/canvasStore';
 import { useScopeStore } from '../../stores/scopeStore';
@@ -64,6 +65,16 @@ async function processChange(change: PendingChange, projectId: string) {
       projectId,
       elementId: change.elementId,
       label: change.label,
+    });
+    return;
+  }
+
+  if (change.type === 'resize-flowchart-element') {
+    await resizeFlowchartElementAction({
+      projectId,
+      elementId: change.elementId,
+      width: change.width,
+      height: change.height,
     });
     return;
   }

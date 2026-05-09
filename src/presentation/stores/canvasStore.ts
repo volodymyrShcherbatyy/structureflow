@@ -77,6 +77,12 @@ export type PendingChange =
   | {
       type: 'delete-flowchart-element';
       elementId: string;
+    }
+  | {
+      type: 'resize-flowchart-element';
+      elementId: string;
+      width: number;
+      height: number;
     };
 
 type CanvasStore = {
@@ -109,6 +115,7 @@ type CanvasStore = {
   isTraceEnabled: boolean;
   toggleTrace: () => void;
   updateFlowchartElementLabel: (elementId: string, label: string) => void;
+  resizeFlowchartElement: (elementId: string, width: number, height: number,) => void;
 };
 
 function resolveEndpointForPersistence(
@@ -322,6 +329,18 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       return;
     }
 
+    const { nodes } = get();
+
+    const sourceNode = nodes.find((node) => node.id === connection.source);
+    const targetNode = nodes.find((node) => node.id === connection.target);
+
+    if (isFlowchartShapeNode(sourceNode) || isFlowchartShapeNode(targetNode)) {
+      console.warn(
+        'Flowchart connections are not persisted yet. This will be enabled in the FlowchartConnection step.',
+      );
+      return;
+    }
+
     set({
       pendingConnection: {
         source: connection.source,
@@ -399,6 +418,33 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           data: {
             ...node.data,
             label,
+          },
+        };
+      }),
+    })),
+
+    resizeFlowchartElement: (elementId, width, height) => set((state) => ({
+      nodes: state.nodes.map((node) => {
+        if (
+          node.id !== elementId ||
+          node.type !== 'flowchartShapeNode' ||
+          !('elementId' in node.data)
+        ) {
+          return node;
+        }
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            width,
+            height,
+          },
+          style: {
+            ...node.style,
+            width,
+            height,
+            zIndex: 600,
           },
         };
       }),
@@ -520,6 +566,24 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
             ) &&
             !(
               pending.type === 'rename-flowchart-element' &&
+              pending.elementId === change.elementId
+            ) &&
+            !(
+              pending.type === 'resize-flowchart-element' &&
+              pending.elementId === change.elementId
+            ),
+        );
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
+
+      if (change.type === 'resize-flowchart-element') {
+        const filtered = state.pendingChanges.filter(
+          (pending) =>
+            !(
+              pending.type === 'resize-flowchart-element' &&
               pending.elementId === change.elementId
             ),
         );
