@@ -15,6 +15,7 @@ import { SelectionMode } from '@xyflow/react';
 import { TreeView } from '../sidebar/TreeView';
 import { useState, useRef } from 'react';
 import { EdgeLegend } from './EdgeLegend';
+import { FlowchartPalette } from '../sidebar/FlowchartPalette';
 import './edgeStyles.css'
 
 
@@ -190,6 +191,16 @@ function FlowCanvasContent() {
             : false;
         }
 
+        if (node.type === 'flowchartShapeNode') {
+          if (!('scopeId' in node.data)) {
+            return !currentScopeId;
+          }
+
+          return currentScopeId
+            ? node.data.scopeId === currentScopeId
+            : !node.data.scopeId;
+        }
+
         return currentScopeId ? node.parentId === currentScopeId : !node.parentId;
       }),
     [currentScopeId, nodes],
@@ -363,6 +374,7 @@ function FlowCanvasContent() {
           {isCollapsed ? '▶' : '◀'}
         </button>
         <NodePalette />
+        <FlowchartPalette />
         <TreeView />
       </div>
 

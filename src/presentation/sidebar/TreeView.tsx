@@ -38,7 +38,7 @@ function isStructuralNode(node: unknown): node is StructuralNode {
     data?: unknown;
   };
 
-  if (candidate.type === 'portNode') {
+  if (candidate.type !== 'blockNode') {
     return false;
   }
 
@@ -49,13 +49,14 @@ function isStructuralNode(node: unknown): node is StructuralNode {
   const data = candidate.data as {
     label?: unknown;
     nodeType?: unknown;
+    projectId?: unknown;
   };
 
   return (
     typeof candidate.id === 'string' &&
     typeof data.label === 'string' &&
     typeof data.nodeType === 'string' &&
-    typeof (data as { projectId?: unknown }).projectId === 'string'
+    typeof data.projectId === 'string'
   );
 }
 

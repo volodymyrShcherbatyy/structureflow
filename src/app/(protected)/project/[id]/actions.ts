@@ -19,6 +19,13 @@ import { PrismaPortRepository } from '../../../../infrastructure/persistence/pri
 import { MovePort } from '../../../../core/application/use-cases/port/MovePort';
 import { MovePortExternalHandle } from '../../../../core/application/use-cases/port/MovePortExternalHandle';
 import { corePortToFlow } from '../../../../presentation/canvas/mappers/portMapper';
+import { AddFlowchartElement } from '../../../../core/application/use-cases/flowchart/AddFlowchartElement';
+import { DeleteFlowchartElement } from '../../../../core/application/use-cases/flowchart/DeleteFlowchartElement';
+import { MoveFlowchartElement } from '../../../../core/application/use-cases/flowchart/MoveFlowchartElement';
+import { RenameFlowchartElement } from '../../../../core/application/use-cases/flowchart/RenameFlowchartElement';
+import { ResizeFlowchartElement } from '../../../../core/application/use-cases/flowchart/ResizeFlowchartElement';
+import { PrismaFlowchartElementRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaFlowchartElementRepository';
+import { coreFlowchartElementToFlow } from '../../../../presentation/canvas/mappers/flowchartElementMapper';
 
 async function assertOwnership(projectId: string) {
   const userId = await getUserId();
@@ -38,6 +45,7 @@ async function assertOwnership(projectId: string) {
     nodeRepository: new PrismaNodeRepository(prisma),
     edgeRepository: new PrismaEdgeRepository(prisma),
     portRepository: new PrismaPortRepository(prisma),
+    flowchartElementRepository: new PrismaFlowchartElementRepository(prisma),
     projectRepository,
   };
 }
@@ -50,6 +58,17 @@ type AddNodeInput = {
   x: number;
   y: number;
   parentId?: string;
+};
+
+type AddFlowchartElementActionInput = {
+  projectId: string;
+  type: string;
+  label?: string;
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  scopeId?: string;
 };
 
 export async function addNodeAction(input: AddNodeInput) {
@@ -156,4 +175,86 @@ export async function deleteEdgeAction(input: { projectId: string; edgeId: strin
   const deleteEdge = new DeleteEdge(edgeRepository);
 
   return deleteEdge.execute({ edgeId: input.edgeId });
+}
+
+export async function addFlowchartElementAction(input: AddFlowchartElementActionInput) {
+  const { projectRepository, flowchartElementRepository } = await assertOwnership(input.projectId);
+
+  const addFlowchartElement = new AddFlowchartElement(
+    projectRepository,
+    flowchartElementRepository,
+  );
+
+  const { element } = await addFlowchartElement.execute({
+    projectId: input.projectId,
+    type: input.type,
+    label: input.label,
+    x: input.x,
+    y: input.y,
+    width: input.width,
+    height: input.height,
+    scopeId: input.scopeId,
+  });
+
+  return {
+    element: coreFlowchartElementToFlow(element),
+  };
+}
+
+export async function moveFlowchartElementAction(input: {
+  projectId: string;
+  elementId: string;
+  x: number;
+  y: number;
+}) {
+  const { flowchartElementRepository } = await assertOwnership(input.projectId);
+  const moveFlowchartElement = new MoveFlowchartElement(flowchartElementRepository);
+
+  return moveFlowchartElement.execute({
+    elementId: input.elementId,
+    x: input.x,
+    y: input.y,
+  });
+}
+
+export async function resizeFlowchartElementAction(input: {
+  projectId: string;
+  elementId: string;
+  width: number;
+  height: number;
+}) {
+  const { flowchartElementRepository } = await assertOwnership(input.projectId);
+  const resizeFlowchartElement = new ResizeFlowchartElement(flowchartElementRepository);
+
+  return resizeFlowchartElement.execute({
+    elementId: input.elementId,
+    width: input.width,
+    height: input.height,
+  });
+}
+
+export async function renameFlowchartElementAction(input: {
+  projectId: string;
+  elementId: string;
+  label: string;
+}) {
+  const { flowchartElementRepository } = await assertOwnership(input.projectId);
+  const renameFlowchartElement = new RenameFlowchartElement(flowchartElementRepository);
+
+  return renameFlowchartElement.execute({
+    elementId: input.elementId,
+    label: input.label,
+  });
+}
+
+export async function deleteFlowchartElementAction(input: {
+  projectId: string;
+  elementId: string;
+}) {
+  const { flowchartElementRepository } = await assertOwnership(input.projectId);
+  const deleteFlowchartElement = new DeleteFlowchartElement(flowchartElementRepository);
+
+  return deleteFlowchartElement.execute({
+    elementId: input.elementId,
+  });
 }

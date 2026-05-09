@@ -15,11 +15,12 @@ import { FlowNodeData } from '../canvas/mappers/nodeMapper';
 import { FlowPortData } from '../canvas/mappers/portMapper';
 import { Connection } from '@xyflow/react';
 import { getEdgeStyle, getEdgeStyleConfig, isAnimated } from '../canvas/edgeStyles';
+import { FlowchartElementData } from '../canvas/mappers/flowchartElementMapper';
 
 type CanvasNode = {
   id: string;
   position: { x: number; y: number };
-  data: FlowNodeData | FlowPortData;
+  data: FlowNodeData | FlowPortData | FlowchartElementData;
   type?: string;
   parentId?: string;
   style?: React.CSSProperties;
@@ -61,7 +62,22 @@ export type PendingChange =
       sourceHandle?: string | null;
       targetHandle?: string | null;
     }
-  | { type: 'delete-edge'; edgeId: string };
+  | { type: 'delete-edge'; edgeId: string }
+  | {
+      type: 'move-flowchart-element';
+      elementId: string;
+      x: number;
+      y: number;
+    }
+  | {
+      type: 'rename-flowchart-element';
+      elementId: string;
+      label: string;
+    }
+  | {
+      type: 'delete-flowchart-element';
+      elementId: string;
+    };
 
 type CanvasStore = {
   nodes: CanvasNode[];
@@ -92,6 +108,7 @@ type CanvasStore = {
   setSelectedNode: (nodeId: string | null) => void;
   isTraceEnabled: boolean;
   toggleTrace: () => void;
+  updateFlowchartElementLabel: (elementId: string, label: string) => void;
 };
 
 function resolveEndpointForPersistence(
@@ -147,6 +164,10 @@ function isPortNode(node: CanvasNode | undefined): boolean {
   return node?.type === 'portNode';
 }
 
+function isFlowchartShapeNode(node: CanvasNode | undefined): boolean {
+  return node?.type === 'flowchartShapeNode';
+}
+
 function isEdgeConnectedToNode(edge: CanvasEdge, nodeId: string): boolean {
   return (
     edge.source === nodeId ||
@@ -176,8 +197,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   lastSavedAt: null,
   selectedNodeId: null,
   setSelectedNode: (nodeId) => set({ selectedNodeId: nodeId }),
-  initCanvas: (nodes, edges) =>
-  set({
+
+  initCanvas: (nodes, edges) => set({
     nodes,
     edges: edges.map(applyEdgeVisuals),
     pendingChanges: [],
@@ -188,18 +209,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
     isTraceEnabled: false,
 
-    toggleTrace: () =>
-      set((state) => ({
-        isTraceEnabled: !state.isTraceEnabled,
-        selectedNodeId: null, // ← ОЦЕ ДОДАЄМО
-      })),
+  toggleTrace: () => set((state) => ({
+    isTraceEnabled: !state.isTraceEnabled,
+    selectedNodeId: null,
+  })),
 
-  onNodesChange: (changes) =>
-  set((state) => {
-    const safeChanges = changes.filter((change) => {
-      if (change.type !== 'remove') {
-        return true;
-      }
+  onNodesChange: (changes) => set((state) => {
+      const safeChanges = changes.filter((change) => {
+        if (change.type !== 'remove') {
+          return true;
+        }
 
       const node = state.nodes.find((item) => item.id === change.id);
 
@@ -226,6 +245,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           return;
         }
 
+        if (movedNode?.type === 'flowchartShapeNode' && 'elementId' in movedNode.data) {
+          get().addPendingChange({
+            type: 'move-flowchart-element',
+            elementId: movedNode.data.elementId,
+            x: change.position.x,
+            y: change.position.y,
+          });
+
+          return;
+        }
+
         get().addPendingChange({
           type: 'move',
           nodeId: change.id,
@@ -235,6 +265,18 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
 
       if (change.type === 'remove') {
+
+        const removedNode = state.nodes.find((node) => node.id === change.id);
+
+        if (removedNode?.type === 'flowchartShapeNode' && 'elementId' in removedNode.data) {
+          get().addPendingChange({
+            type: 'delete-flowchart-element',
+            elementId: removedNode.data.elementId,
+          });
+
+          return;
+        }
+
         get().addPendingChange({ type: 'delete-node', nodeId: change.id });
       }
     });
@@ -244,8 +286,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     };
   }),
 
-  onEdgesChange: (changes) =>
-  set((state) => {
+  onEdgesChange: (changes) => set((state) => {
     const nextEdges = applyEdgeChanges(
       changes as never,
       state.edges as never,
@@ -277,55 +318,56 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
 
   onConnect: (connection) => {
-  if (!connection.source || !connection.target) {
-    return;
-  }
+    if (!connection.source || !connection.target) {
+      return;
+    }
 
-  set({
-    pendingConnection: {
-      source: connection.source,
-      target: connection.target,
-      sourceHandle: connection.sourceHandle,
-      targetHandle: connection.targetHandle,
-    },
-  });
-},
+    set({
+      pendingConnection: {
+        source: connection.source,
+        target: connection.target,
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
+      },
+    });
+  },
+
   addNode: (node) => set((state) => ({ nodes: [...state.nodes, node] })),
-  removeNode: (nodeId) =>
-    set((state) => ({
-      nodes: state.nodes.filter((node) => node.id !== nodeId),
-      edges: state.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
-    })),
+
+  removeNode: (nodeId) => set((state) => ({
+    nodes: state.nodes.filter((node) => node.id !== nodeId),
+    edges: state.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
+  })),
+
   addEdge: (edge) => set((state) => ({ edges: [...state.edges, edge] })),
-  removeEdge: (edgeId) =>
-    set((state) => ({
-      edges: state.edges.filter((edge) => edge.id !== edgeId),
-    })),
-  replaceEdgeId: (tempEdgeId, edgeId) =>
-    set((state) => ({
-      edges: state.edges.map((edge) => (edge.id === tempEdgeId ? { ...edge, id: edgeId } : edge)),
-      pendingChanges: state.pendingChanges.map((change) => {
-        if (change.type === 'delete-edge' && change.edgeId === tempEdgeId) {
-          return { ...change, edgeId };
-        }
 
-        return change;
-      }),
-    })),
-  updateNodePosition: (nodeId, x, y) =>
-    set((state) => ({
-      nodes: state.nodes.map((node) =>
-        node.id === nodeId
-          ? {
-              ...node,
-              position: { x, y },
-            }
-          : node,
-      ),
-    })),
+  removeEdge: (edgeId) => set((state) => ({
+    edges: state.edges.filter((edge) => edge.id !== edgeId),
+  })),
 
-  updateNodeLabel: (nodeId, label) =>
-    set((state) => ({
+  replaceEdgeId: (tempEdgeId, edgeId) => set((state) => ({
+    edges: state.edges.map((edge) => (edge.id === tempEdgeId ? { ...edge, id: edgeId } : edge)),
+    pendingChanges: state.pendingChanges.map((change) => {
+      if (change.type === 'delete-edge' && change.edgeId === tempEdgeId) {
+        return { ...change, edgeId };
+      }
+
+      return change;
+    }),
+  })),
+    
+  updateNodePosition: (nodeId, x, y) => set((state) => ({
+    nodes: state.nodes.map((node) =>
+      node.id === nodeId
+        ? {
+            ...node,
+            position: { x, y },
+          }
+        : node,
+    ),
+  })),
+
+  updateNodeLabel: (nodeId, label) => set((state) => ({
       nodes: state.nodes.map((node) => {
         if (node.id !== nodeId || node.type === 'portNode') {
           return node;
@@ -339,10 +381,31 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           },
         };
       }),
-  })),
+    })),
 
-  updateExternalHandleOffset: (portId, offset) =>
-  set((state) => ({
+
+    updateFlowchartElementLabel: (elementId, label) => set((state) => ({
+      nodes: state.nodes.map((node) => {
+        if (
+          node.id !== elementId ||
+          node.type !== 'flowchartShapeNode' ||
+          !('elementId' in node.data)
+        ) {
+          return node;
+        }
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            label,
+          },
+        };
+      }),
+    })),
+
+
+  updateExternalHandleOffset: (portId, offset) => set((state) => ({
     nodes: state.nodes.map((node) => {
       if (node.id !== portId || node.type !== 'portNode' || !('externalHandleOffset' in node.data)) {
         return node;
@@ -359,6 +422,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   })),
 
   setPendingConnection: (pendingConnection) => set({ pendingConnection }),
+
   addTypedEdgeFromPending: (edgeType) => {
     const { pendingConnection, edges, nodes } = get();
 
@@ -417,8 +481,55 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     });
   },
   
-  addPendingChange: (change) =>
-    set((state) => {
+  addPendingChange: (change) => set((state) => {
+
+      if (change.type === 'move-flowchart-element') {
+        const filtered = state.pendingChanges.filter(
+          (pending) =>
+            !(
+              pending.type === 'move-flowchart-element' &&
+              pending.elementId === change.elementId
+            ),
+        );
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
+
+      if (change.type === 'rename-flowchart-element') {
+        const filtered = state.pendingChanges.filter(
+          (pending) =>
+            !(
+              pending.type === 'rename-flowchart-element' &&
+              pending.elementId === change.elementId
+            ),
+        );
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
+
+      if (change.type === 'delete-flowchart-element') {
+        const filtered = state.pendingChanges.filter(
+          (pending) =>
+            !(
+              pending.type === 'move-flowchart-element' &&
+              pending.elementId === change.elementId
+            ) &&
+            !(
+              pending.type === 'rename-flowchart-element' &&
+              pending.elementId === change.elementId
+            ),
+        );
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
+
+
       if (change.type === 'move') {
         const filtered = state.pendingChanges.filter(
           (pending) => !(pending.type === 'move' && pending.nodeId === change.nodeId),
@@ -512,6 +623,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         pendingChanges: [...state.pendingChanges, change],
       };
     }),
+
   clearPendingChanges: () => set({ pendingChanges: [] }),
   setSaving: (isSaving) => set({ isSaving }),
   markSaved: () => set({ isSaving: false, lastSavedAt: new Date() }),

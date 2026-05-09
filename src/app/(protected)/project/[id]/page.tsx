@@ -11,6 +11,8 @@ import { coreEdgeToFlow } from '../../../../presentation/canvas/mappers/edgeMapp
 import { coreNodeToFlow } from '../../../../presentation/canvas/mappers/nodeMapper';
 import { PrismaPortRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaPortRepository';
 import { corePortToFlow } from '../../../../presentation/canvas/mappers/portMapper';
+import { PrismaFlowchartElementRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaFlowchartElementRepository';
+import { coreFlowchartElementToFlow } from '../../../../presentation/canvas/mappers/flowchartElementMapper';
 
 type ProjectPageProps = {
   params: {
@@ -35,6 +37,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const nodeRepository = new PrismaNodeRepository(prisma);
   const edgeRepository = new PrismaEdgeRepository(prisma);
   const portRepository = new PrismaPortRepository(prisma);
+  const flowchartElementRepository = new PrismaFlowchartElementRepository(prisma);
 
   const project = await projectRepository.findById(projectId);
 
@@ -42,10 +45,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     notFound();
   }
 
-  const [nodes, edges, ports] = await Promise.all([
+  const [nodes, edges, ports, flowchartElements] = await Promise.all([
     nodeRepository.findAllByProject(projectId),
     edgeRepository.findAllByProject(projectId),
     portRepository.findAllByProject(projectId),
+    flowchartElementRepository.findAllByProject(project.id),
   ]);
 
   return (
@@ -55,6 +59,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       initialNodes={nodes.map((node) => coreNodeToFlow(node, id))}
       initialEdges={edges.map((edge) => coreEdgeToFlow(edge))}
       initialPorts={ports.map((port) => corePortToFlow(port))}
+      initialFlowchartElements={flowchartElements.map((element) => coreFlowchartElementToFlow(element),)}
     />
   );
 }
