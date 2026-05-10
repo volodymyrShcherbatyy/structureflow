@@ -17,6 +17,7 @@ import { Connection } from '@xyflow/react';
 import { getEdgeStyle, getEdgeStyleConfig, isAnimated } from '../canvas/edgeStyles';
 import { FlowchartElementData } from '../canvas/mappers/flowchartElementMapper';
 import { FlowchartConnectionEdgeData } from '../canvas/mappers/flowchartConnectionMapper';
+import { useScopeStore } from './scopeStore';
 
 type CanvasNode = {
   id: string;
@@ -40,11 +41,15 @@ type CanvasEdge = {
   markerEnd?: EdgeMarkerType;
 };
 
+type CanvasEndpointKind = 'node' | 'port' | 'flowchart-element';
+
 type PendingConnection = {
   source: string;
   target: string;
   sourceHandle?: string | null;
   targetHandle?: string | null;
+  sourceKind: CanvasEndpointKind;
+  targetKind: CanvasEndpointKind;
 };
 
 export type PendingChange =
@@ -84,6 +89,27 @@ export type PendingChange =
       elementId: string;
       width: number;
       height: number;
+    }
+  | {
+      type: 'connect-flowchart-connection';
+      tempConnectionId: string;
+      source: {
+        kind: 'node' | 'port' | 'flowchart-element';
+        id: string;
+        anchor?: string;
+      };
+      target: {
+        kind: 'node' | 'port' | 'flowchart-element';
+        id: string;
+        anchor?: string;
+      };
+      connectionType: string;
+      label?: string;
+      scopeId?: string;
+    }
+  | {
+      type: 'delete-flowchart-connection';
+      connectionId: string;
     };
 
 type CanvasStore = {
@@ -117,6 +143,7 @@ type CanvasStore = {
   toggleTrace: () => void;
   updateFlowchartElementLabel: (elementId: string, label: string) => void;
   resizeFlowchartElement: (elementId: string, width: number, height: number,) => void;
+  replaceFlowchartConnectionId: (tempConnectionId: string, connectionId: string,) => void;
 };
 
 function resolveEndpointForPersistence(
@@ -139,6 +166,50 @@ function resolveEndpointForPersistence(
   };
 }
 
+function resolveCanvasEndpoint(
+  nodes: CanvasNode[],
+  endpointId: string,
+  handleId?: string | null,
+): {
+  kind: 'node' | 'port' | 'flowchart-element';
+  id: string;
+  anchor?: string;
+} {
+  const node = nodes.find((item) => item.id === endpointId);
+
+  if (node?.type === 'flowchartShapeNode' && 'elementId' in node.data) {
+    return {
+      kind: 'flowchart-element',
+      id: node.data.elementId,
+      anchor: handleId ?? undefined,
+    };
+  }
+
+  if (node?.type === 'portNode' && 'portId' in node.data) {
+    return {
+      kind: 'port',
+      id: node.data.portId,
+      anchor: handleId ?? node.data.side,
+    };
+  }
+
+  return {
+    kind: 'node',
+    id: endpointId,
+    anchor: handleId ?? undefined,
+  };
+}
+
+function shouldUseRegularArchitectureEdge(
+  sourceEndpoint: { kind: CanvasEndpointKind },
+  targetEndpoint: { kind: CanvasEndpointKind },
+): boolean {
+  return (
+    sourceEndpoint.kind !== 'flowchart-element' &&
+    targetEndpoint.kind !== 'flowchart-element'
+  );
+}
+
 function getEdgeType(edge: CanvasEdge): string {
   if (edge.data && 'edgeType' in edge.data) {
     return edge.data.edgeType ?? 'dependency';
@@ -151,16 +222,22 @@ function applyEdgeVisuals(edge: CanvasEdge): CanvasEdge {
   if (edge.data && 'connectionKind' in edge.data && edge.data.connectionKind === 'flowchart') {
     return {
       ...edge,
-      markerEnd: edge.markerEnd ?? {
+      animated: false,
+      markerEnd: {
         type: MarkerType.ArrowClosed,
         color: '#111827',
         width: 18,
         height: 18,
       },
       style: {
+        ...(typeof edge.style === 'object' && edge.style !== null ? edge.style : {}),
         stroke: '#111827',
         strokeWidth: 1.5,
-        ...(typeof edge.style === 'object' && edge.style !== null ? edge.style : {}),
+      },
+      data: {
+        ...edge.data,
+        connectionKind: 'flowchart',
+        connectionType: edge.data.connectionType ?? 'flow',
       },
     };
   }
@@ -215,6 +292,31 @@ function isEdgeConnectedToAnyDeletedNode(
       pending.type === 'delete-node' &&
       isEdgeConnectedToNode(edge, pending.nodeId),
   );
+}
+
+function getDefaultFlowchartConnectionLabel(
+  sourceNode: CanvasNode | undefined,
+  sourceHandle?: string | null,
+): string | undefined {
+  if (
+    sourceNode?.type !== 'flowchartShapeNode' ||
+    !('flowchartType' in sourceNode.data) ||
+    sourceNode.data.flowchartType !== 'decision'
+  ) {
+    return undefined;
+  }
+
+  const anchor = sourceHandle?.split(':')[0];
+
+  if (anchor === 'right') {
+    return 'Yes';
+  }
+
+  if (anchor === 'left') {
+    return 'No';
+  }
+
+  return undefined;
 }
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
@@ -336,6 +438,19 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         return;
       }
 
+      if (
+        edge.data &&
+        'connectionKind' in edge.data &&
+        edge.data.connectionKind === 'flowchart'
+      ) {
+        get().addPendingChange({
+          type: 'delete-flowchart-connection',
+          connectionId: change.id,
+        });
+
+        return;
+      }
+
       get().addPendingChange({ type: 'delete-edge', edgeId: change.id });
     });
 
@@ -356,20 +471,71 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const sourceNode = nodes.find((node) => node.id === connection.source);
     const targetNode = nodes.find((node) => node.id === connection.target);
 
-    if (isFlowchartShapeNode(sourceNode) || isFlowchartShapeNode(targetNode)) {
-      console.warn(
-        'Flowchart connections are not persisted yet. This will be enabled in the FlowchartConnection step.',
-      );
+    const sourceEndpoint = resolveCanvasEndpoint(
+      nodes,
+      connection.source,
+      connection.sourceHandle,
+    );
+
+    const targetEndpoint = resolveCanvasEndpoint(
+      nodes,
+      connection.target,
+      connection.targetHandle,
+    );
+
+    const isRegularArchitectureEdge = shouldUseRegularArchitectureEdge(
+      sourceEndpoint,
+      targetEndpoint,
+    );
+
+    if (isRegularArchitectureEdge) {
+      set({
+        pendingConnection: {
+          source: connection.source,
+          target: connection.target,
+          sourceHandle: connection.sourceHandle,
+          targetHandle: connection.targetHandle,
+          sourceKind: sourceEndpoint.kind,
+          targetKind: targetEndpoint.kind,
+        },
+      });
+
       return;
     }
 
-    set({
-      pendingConnection: {
-        source: connection.source,
-        target: connection.target,
-        sourceHandle: connection.sourceHandle,
-        targetHandle: connection.targetHandle,
+    const tempConnectionId = `temp-flowchart-connection-${crypto.randomUUID()}`;
+    const label = getDefaultFlowchartConnectionLabel(
+      sourceNode,
+      connection.sourceHandle,
+    );
+
+    const edge: CanvasEdge = applyEdgeVisuals({
+      id: tempConnectionId,
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle ?? undefined,
+      targetHandle: connection.targetHandle ?? undefined,
+      label,
+      data: {
+        connectionKind: 'flowchart',
+        connectionType: 'flow',
+        sourceKind: sourceEndpoint.kind,
+        targetKind: targetEndpoint.kind,
       },
+    });
+
+    set((state) => ({
+      edges: addFlowEdge(edge as never, state.edges as never) as CanvasEdge[],
+    }));
+
+    get().addPendingChange({
+      type: 'connect-flowchart-connection',
+      tempConnectionId,
+      source: sourceEndpoint,
+      target: targetEndpoint,
+      connectionType: 'flow',
+      label,
+      scopeId: useScopeStore.getState().currentScopeId ?? undefined,
     });
   },
 
@@ -391,6 +557,22 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     pendingChanges: state.pendingChanges.map((change) => {
       if (change.type === 'delete-edge' && change.edgeId === tempEdgeId) {
         return { ...change, edgeId };
+      }
+
+      return change;
+    }),
+  })),
+
+  replaceFlowchartConnectionId: (tempConnectionId, connectionId) => set((state) => ({
+    edges: state.edges.map((edge) =>
+      edge.id === tempConnectionId ? { ...edge, id: connectionId } : edge,
+    ),
+    pendingChanges: state.pendingChanges.map((change) => {
+      if (
+        change.type === 'delete-flowchart-connection' &&
+        change.connectionId === tempConnectionId
+      ) {
+        return { ...change, connectionId };
       }
 
       return change;
@@ -607,6 +789,20 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
             !(
               pending.type === 'resize-flowchart-element' &&
               pending.elementId === change.elementId
+            ),
+        );
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
+
+      if (change.type === 'delete-flowchart-connection') {
+        const filtered = state.pendingChanges.filter(
+          (pending) =>
+            !(
+              pending.type === 'connect-flowchart-connection' &&
+              pending.tempConnectionId === change.connectionId
             ),
         );
 

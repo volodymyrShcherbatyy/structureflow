@@ -290,25 +290,26 @@ function FlowCanvasContent() {
   
 
   const tracedNodes = useMemo(() => {
-  if (!isTraceEnabled || !selectedNodeId) return visibleNodes;
+    if (!isTraceEnabled || !selectedNodeId) return visibleNodes;
 
-  return visibleNodes.map(node => {
-    const isConnected =
-      node.id === selectedNodeId ||
-      visibleEdges.some(
-        e =>
-          (e.source === selectedNodeId && e.target === node.id) ||
-          (e.target === selectedNodeId && e.source === node.id)
-      );
+    return visibleNodes.map((node) => {
+      const isConnected =
+        node.id === selectedNodeId ||
+        visibleArchitectureEdges.some(
+          (edge) =>
+            (edge.source === selectedNodeId && edge.target === node.id) ||
+            (edge.target === selectedNodeId && edge.source === node.id),
+        );
 
-    return {
-      ...node,
-      style: {
-        opacity: isConnected ? 1 : 0.2,
-      },
-    };
-  });
-}, [visibleNodes, visibleEdges, selectedNodeId]);
+      return {
+        ...node,
+        style: {
+          ...node.style,
+          opacity: isConnected ? 1 : 0.2,
+        },
+      };
+    });
+  }, [visibleNodes, visibleArchitectureEdges, selectedNodeId, isTraceEnabled]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

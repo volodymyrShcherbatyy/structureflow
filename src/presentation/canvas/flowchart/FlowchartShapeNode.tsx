@@ -237,6 +237,23 @@ function FlowchartShapeFrame({
   }
 }
 
+function getBothHandleStyle(
+  anchorId: string,
+  handleType: 'source' | 'target',
+): React.CSSProperties {
+  const offset = handleType === 'source' ? 5 : -5;
+
+  if (anchorId === 'top' || anchorId === 'bottom') {
+    return {
+      transform: `translateX(${offset}px)`,
+    };
+  }
+
+  return {
+    transform: `translateY(${offset}px)`,
+  };
+}
+
 function ResizeHandle({
   position,
   onPointerDown,
@@ -309,7 +326,12 @@ function FlowchartAnchorHandles({
               id={`${anchor.id}:source`}
               type="source"
               position={anchor.position}
-              style={baseStyle}
+              style={{
+                ...baseStyle,
+                ...(anchor.role === 'both'
+                  ? getBothHandleStyle(anchor.id, 'source')
+                  : {}),
+              }}
             />,
           );
         }
@@ -321,7 +343,12 @@ function FlowchartAnchorHandles({
               id={`${anchor.id}:target`}
               type="target"
               position={anchor.position}
-              style={baseStyle}
+              style={{
+                ...baseStyle,
+                ...(anchor.role === 'both'
+                  ? getBothHandleStyle(anchor.id, 'target')
+                  : {}),
+              }}
             />,
           );
         }

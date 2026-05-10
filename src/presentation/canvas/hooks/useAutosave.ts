@@ -14,6 +14,8 @@ import {
   moveFlowchartElementAction,
   renameFlowchartElementAction,
   resizeFlowchartElementAction,
+  connectFlowchartElementsAction,
+  deleteFlowchartConnectionAction,
 } from '../../../app/(protected)/project/[id]/actions';
 import { PendingChange, useCanvasStore } from '../../stores/canvasStore';
 import { useScopeStore } from '../../stores/scopeStore';
@@ -84,6 +86,32 @@ async function processChange(change: PendingChange, projectId: string) {
       projectId,
       elementId: change.elementId,
     });
+    return;
+  }
+
+  if (change.type === 'connect-flowchart-connection') {
+    const { connection } = await connectFlowchartElementsAction({
+      projectId,
+      source: change.source,
+      target: change.target,
+      type: change.connectionType,
+      label: change.label,
+      scopeId: change.scopeId,
+    });
+
+    useCanvasStore
+      .getState()
+      .replaceFlowchartConnectionId(change.tempConnectionId, connection.id);
+
+    return;
+  }
+
+  if (change.type === 'delete-flowchart-connection') {
+    await deleteFlowchartConnectionAction({
+      projectId,
+      connectionId: change.connectionId,
+    });
+
     return;
   }
 
