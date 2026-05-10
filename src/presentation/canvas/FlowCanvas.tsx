@@ -208,46 +208,54 @@ function FlowCanvasContent() {
 
   const visibleNodeIds = useMemo(() => new Set(visibleNodes.map((node) => node.id)), [visibleNodes]);
 
-  const visibleEdges = useMemo(
-  () =>
-    edges
-      .map((edge) => {
-        const sourceVisible = visibleNodeIds.has(edge.source);
-        const targetVisible = visibleNodeIds.has(edge.target);
+  const visibleEdges = useMemo(() => edges.map((edge) => {
+      const sourceVisible = visibleNodeIds.has(edge.source);
+      const targetVisible = visibleNodeIds.has(edge.target);
 
-        const sourcePortSide = getPortSideFromHandle(edge.sourceHandle);
-        const targetPortSide = getPortSideFromHandle(edge.targetHandle);
+      const sourcePortSide = getPortSideFromHandle(edge.sourceHandle);
+      const targetPortSide = getPortSideFromHandle(edge.targetHandle);
 
-        const sourcePortId =
-          !sourceVisible && sourcePortSide
-            ? `${edge.source}:${sourcePortSide}`
-            : edge.source;
+      const sourcePortId =
+        !sourceVisible && sourcePortSide
+          ? `${edge.source}:${sourcePortSide}`
+          : edge.source;
 
-        const targetPortId =
-          !targetVisible && targetPortSide
-            ? `${edge.target}:${targetPortSide}`
-            : edge.target;
+      const targetPortId =
+        !targetVisible && targetPortSide
+          ? `${edge.target}:${targetPortSide}`
+          : edge.target;
 
-        const source = sourceVisible
-          ? edge.source
-          : visibleNodeIds.has(sourcePortId)
-            ? sourcePortId
-            : edge.source;
+      const source = sourceVisible
+        ? edge.source
+        : visibleNodeIds.has(sourcePortId)
+          ? sourcePortId
+          : edge.source;
 
-        const target = targetVisible
-          ? edge.target
-          : visibleNodeIds.has(targetPortId)
-            ? targetPortId
-            : edge.target;
+      const target = targetVisible
+        ? edge.target
+        : visibleNodeIds.has(targetPortId)
+          ? targetPortId
+          : edge.target;
 
-        return {
-          ...edge,
-          source,
-          target,
-        };
-      })
-      .filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)),
+      return {
+        ...edge,
+        source,
+        target,
+      };
+    })
+    .filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)),
     [edges, visibleNodeIds],
+  );
+
+  const visibleArchitectureEdges = useMemo(() => visibleEdges.filter(
+    (edge) =>
+      !(
+        edge.data &&
+        'connectionKind' in edge.data &&
+        edge.data.connectionKind === 'flowchart'
+      ),
+    ),
+    [visibleEdges],
   );
 
   
@@ -255,7 +263,7 @@ function FlowCanvasContent() {
   const tracedEdges = useMemo(() => {
     if (!isTraceEnabled || !selectedNodeId) return visibleEdges;
 
-    return visibleEdges.map(edge => {
+    const tracedArchitectureEdges = visibleArchitectureEdges.map((edge) => {
       const isConnected =
         edge.source === selectedNodeId ||
         edge.target === selectedNodeId;
@@ -268,30 +276,40 @@ function FlowCanvasContent() {
         },
       };
     });
-  }, [visibleEdges, selectedNodeId]);
+
+    const flowchartEdges = visibleEdges.filter(
+      (edge) =>
+        edge.data &&
+        'connectionKind' in edge.data &&
+        edge.data.connectionKind === 'flowchart',
+    );
+
+    return [...tracedArchitectureEdges, ...flowchartEdges];
+  }, [visibleEdges, visibleArchitectureEdges, selectedNodeId, isTraceEnabled]);
 
   
 
   const tracedNodes = useMemo(() => {
-  if (!isTraceEnabled || !selectedNodeId) return visibleNodes;
+    if (!isTraceEnabled || !selectedNodeId) return visibleNodes;
 
-  return visibleNodes.map(node => {
-    const isConnected =
-      node.id === selectedNodeId ||
-      visibleEdges.some(
-        e =>
-          (e.source === selectedNodeId && e.target === node.id) ||
-          (e.target === selectedNodeId && e.source === node.id)
-      );
+    return visibleNodes.map((node) => {
+      const isConnected =
+        node.id === selectedNodeId ||
+        visibleArchitectureEdges.some(
+          (edge) =>
+            (edge.source === selectedNodeId && edge.target === node.id) ||
+            (edge.target === selectedNodeId && edge.source === node.id),
+        );
 
-    return {
-      ...node,
-      style: {
-        opacity: isConnected ? 1 : 0.2,
-      },
-    };
-  });
-}, [visibleNodes, visibleEdges, selectedNodeId]);
+      return {
+        ...node,
+        style: {
+          ...node.style,
+          opacity: isConnected ? 1 : 0.2,
+        },
+      };
+    });
+  }, [visibleNodes, visibleArchitectureEdges, selectedNodeId, isTraceEnabled]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

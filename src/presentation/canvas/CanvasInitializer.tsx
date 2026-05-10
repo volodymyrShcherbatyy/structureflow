@@ -12,6 +12,7 @@ import { useCanvasStore } from '../stores/canvasStore';
 import { useScopeStore } from '../stores/scopeStore';
 import { FlowPortData } from './mappers/portMapper';
 import { FlowchartElementData } from './mappers/flowchartElementMapper';
+import { FlowchartConnectionEdgeData } from './mappers/flowchartConnectionMapper';
 
 type CanvasInitializerProps = {
   projectId: string;
@@ -20,6 +21,7 @@ type CanvasInitializerProps = {
   initialEdges: Edge<FlowEdgeData>[];
   initialPorts: Node<FlowPortData>[];
   initialFlowchartElements: Node<FlowchartElementData>[];
+  initialFlowchartConnections: Edge<FlowchartConnectionEdgeData>[];
 };
 
 function CanvasContent() {
@@ -40,6 +42,7 @@ export function CanvasInitializer({
   initialEdges,
   initialPorts,
   initialFlowchartElements,
+  initialFlowchartConnections,
 }: CanvasInitializerProps) {
   const initCanvas = useCanvasStore((state) => state.initCanvas);
   const setProjectId = useScopeStore((state) => state.setProjectId);
@@ -50,8 +53,8 @@ export function CanvasInitializer({
     setProjectId(projectId);
     setProjectName(projectName);
     
-    initCanvas([...initialNodes, ...initialPorts, ...initialFlowchartElements], initialEdges);
-  }, [projectId, projectName, initialNodes, initialEdges, initialPorts, initialFlowchartElements,initCanvas, setProjectId, setProjectName]);
+    initCanvas([...initialNodes, ...initialPorts, ...initialFlowchartElements], [...initialEdges, ...initialFlowchartConnections]);
+  }, [projectId, projectName, initialNodes, initialEdges, initialPorts, initialFlowchartElements, initialFlowchartConnections, initCanvas, setProjectId, setProjectName]);
   
   return (
     <ReactFlowProvider>

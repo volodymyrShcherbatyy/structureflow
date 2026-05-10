@@ -23,10 +23,10 @@ export const FLOWCHART_ANCHORS: Record<
   ],
 
   process: [
-    { id: 'top', role: 'both', position: Position.Top },
-    { id: 'right', role: 'both', position: Position.Right },
-    { id: 'bottom', role: 'both', position: Position.Bottom },
-    { id: 'left', role: 'both', position: Position.Left },
+    { id: 'top', role: 'target', position: Position.Top },
+    { id: 'right', role: 'source', position: Position.Right },
+    { id: 'bottom', role: 'source', position: Position.Bottom },
+    { id: 'left', role: 'source', position: Position.Left },
   ],
 
   decision: [
@@ -37,10 +37,10 @@ export const FLOWCHART_ANCHORS: Record<
   ],
 
   data: [
-    { id: 'top', role: 'both', position: Position.Top },
-    { id: 'right', role: 'both', position: Position.Right },
-    { id: 'bottom', role: 'both', position: Position.Bottom },
-    { id: 'left', role: 'both', position: Position.Left },
+    { id: 'top', role: 'target', position: Position.Top },
+    { id: 'right', role: 'source', position: Position.Right },
+    { id: 'bottom', role: 'source', position: Position.Bottom },
+    { id: 'left', role: 'source', position: Position.Left },
   ],
 };
 

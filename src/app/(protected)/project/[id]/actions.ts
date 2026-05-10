@@ -26,6 +26,10 @@ import { RenameFlowchartElement } from '../../../../core/application/use-cases/f
 import { ResizeFlowchartElement } from '../../../../core/application/use-cases/flowchart/ResizeFlowchartElement';
 import { PrismaFlowchartElementRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaFlowchartElementRepository';
 import { coreFlowchartElementToFlow } from '../../../../presentation/canvas/mappers/flowchartElementMapper';
+import { ConnectFlowchartElements } from '../../../../core/application/use-cases/flowchart/ConnectFlowchartElements';
+import { DeleteFlowchartConnection } from '../../../../core/application/use-cases/flowchart/DeleteFlowchartConnection';
+import { PrismaFlowchartConnectionRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaFlowchartConnectionRepository';
+import { coreFlowchartConnectionToFlow } from '../../../../presentation/canvas/mappers/flowchartConnectionMapper';
 
 async function assertOwnership(projectId: string) {
   const userId = await getUserId();
@@ -46,6 +50,7 @@ async function assertOwnership(projectId: string) {
     edgeRepository: new PrismaEdgeRepository(prisma),
     portRepository: new PrismaPortRepository(prisma),
     flowchartElementRepository: new PrismaFlowchartElementRepository(prisma),
+    flowchartConnectionRepository: new PrismaFlowchartConnectionRepository(prisma),
     projectRepository,
   };
 }
@@ -68,6 +73,21 @@ type AddFlowchartElementActionInput = {
   y: number;
   width?: number;
   height?: number;
+  scopeId?: string;
+};
+
+type FlowchartEndpointActionInput = {
+  kind: 'flowchart-element' | 'node' | 'port';
+  id: string;
+  anchor?: string;
+};
+
+type ConnectFlowchartElementsActionInput = {
+  projectId: string;
+  source: FlowchartEndpointActionInput;
+  target: FlowchartEndpointActionInput;
+  type?: string;
+  label?: string;
   scopeId?: string;
 };
 
@@ -256,5 +276,43 @@ export async function deleteFlowchartElementAction(input: {
 
   return deleteFlowchartElement.execute({
     elementId: input.elementId,
+  });
+}
+
+export async function connectFlowchartElementsAction(
+  input: ConnectFlowchartElementsActionInput,
+) {
+  const { flowchartConnectionRepository } = await assertOwnership(input.projectId);
+
+  const connectFlowchartElements = new ConnectFlowchartElements(
+    flowchartConnectionRepository,
+  );
+
+  const { connection } = await connectFlowchartElements.execute({
+    projectId: input.projectId,
+    source: input.source,
+    target: input.target,
+    type: input.type,
+    label: input.label,
+    scopeId: input.scopeId,
+  });
+
+  return {
+    connection: coreFlowchartConnectionToFlow(connection),
+  };
+}
+
+export async function deleteFlowchartConnectionAction(input: {
+  projectId: string;
+  connectionId: string;
+}) {
+  const { flowchartConnectionRepository } = await assertOwnership(input.projectId);
+
+  const deleteFlowchartConnection = new DeleteFlowchartConnection(
+    flowchartConnectionRepository,
+  );
+
+  return deleteFlowchartConnection.execute({
+    connectionId: input.connectionId,
   });
 }
