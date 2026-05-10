@@ -29,6 +29,7 @@ const testPrisma = new PrismaClient({
 });
 
 const cleanDatabase = async (): Promise<void> => {
+  await testPrisma.flowchartConnection.deleteMany();
   await testPrisma.flowchartElement.deleteMany();
   await testPrisma.edge.deleteMany();
   await testPrisma.port.deleteMany();
