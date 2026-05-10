@@ -16,6 +16,7 @@ import { FlowPortData } from '../canvas/mappers/portMapper';
 import { Connection } from '@xyflow/react';
 import { getEdgeStyle, getEdgeStyleConfig, isAnimated } from '../canvas/edgeStyles';
 import { FlowchartElementData } from '../canvas/mappers/flowchartElementMapper';
+import { FlowchartConnectionEdgeData } from '../canvas/mappers/flowchartConnectionMapper';
 
 type CanvasNode = {
   id: string;
@@ -31,7 +32,7 @@ type CanvasEdge = {
   source: string;
   target: string;
   label?: ReactNode;
-  data?: FlowEdgeData;
+  data?: FlowEdgeData | FlowchartConnectionEdgeData;
   sourceHandle?: string;
   targetHandle?: string;
   animated?: boolean;
@@ -139,10 +140,31 @@ function resolveEndpointForPersistence(
 }
 
 function getEdgeType(edge: CanvasEdge): string {
-  return edge.data?.edgeType ?? 'dependency';
+  if (edge.data && 'edgeType' in edge.data) {
+    return edge.data.edgeType ?? 'dependency';
+  }
+
+  return 'dependency';
 }
 
 function applyEdgeVisuals(edge: CanvasEdge): CanvasEdge {
+  if (edge.data && 'connectionKind' in edge.data && edge.data.connectionKind === 'flowchart') {
+    return {
+      ...edge,
+      markerEnd: edge.markerEnd ?? {
+        type: MarkerType.ArrowClosed,
+        color: '#111827',
+        width: 18,
+        height: 18,
+      },
+      style: {
+        stroke: '#111827',
+        strokeWidth: 1.5,
+        ...(typeof edge.style === 'object' && edge.style !== null ? edge.style : {}),
+      },
+    };
+  }
+
   const edgeType = getEdgeType(edge);
   const edgeStyleConfig = getEdgeStyleConfig(edgeType);
   const markerSize = edgeStyleConfig.markerSize ?? 18;

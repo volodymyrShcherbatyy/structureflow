@@ -13,6 +13,8 @@ import { PrismaPortRepository } from '../../../../infrastructure/persistence/pri
 import { corePortToFlow } from '../../../../presentation/canvas/mappers/portMapper';
 import { PrismaFlowchartElementRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaFlowchartElementRepository';
 import { coreFlowchartElementToFlow } from '../../../../presentation/canvas/mappers/flowchartElementMapper';
+import { PrismaFlowchartConnectionRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaFlowchartConnectionRepository';
+import { coreFlowchartConnectionToFlow } from '../../../../presentation/canvas/mappers/flowchartConnectionMapper';
 
 type ProjectPageProps = {
   params: {
@@ -38,6 +40,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const edgeRepository = new PrismaEdgeRepository(prisma);
   const portRepository = new PrismaPortRepository(prisma);
   const flowchartElementRepository = new PrismaFlowchartElementRepository(prisma);
+  const flowchartConnectionRepository = new PrismaFlowchartConnectionRepository(prisma);
 
   const project = await projectRepository.findById(projectId);
 
@@ -45,11 +48,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     notFound();
   }
 
-  const [nodes, edges, ports, flowchartElements] = await Promise.all([
+  const [nodes, edges, ports, flowchartElements, flowchartConnections] = await Promise.all([
     nodeRepository.findAllByProject(projectId),
     edgeRepository.findAllByProject(projectId),
     portRepository.findAllByProject(projectId),
     flowchartElementRepository.findAllByProject(project.id),
+    flowchartConnectionRepository.findAllByProject(project.id),
   ]);
 
   return (
@@ -60,6 +64,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       initialEdges={edges.map((edge) => coreEdgeToFlow(edge))}
       initialPorts={ports.map((port) => corePortToFlow(port))}
       initialFlowchartElements={flowchartElements.map((element) => coreFlowchartElementToFlow(element),)}
+      initialFlowchartConnections={flowchartConnections.map((connection) => coreFlowchartConnectionToFlow(connection),)}
     />
   );
 }
