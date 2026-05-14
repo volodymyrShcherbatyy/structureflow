@@ -16,6 +16,7 @@ import {
   resizeFlowchartElementAction,
   connectFlowchartElementsAction,
   deleteFlowchartConnectionAction,
+  relabelFlowchartConnectionAction,
 } from '../../../app/(protected)/project/[id]/actions';
 import { PendingChange, useCanvasStore } from '../../stores/canvasStore';
 import { useScopeStore } from '../../stores/scopeStore';
@@ -102,6 +103,16 @@ async function processChange(change: PendingChange, projectId: string) {
     useCanvasStore
       .getState()
       .replaceFlowchartConnectionId(change.tempConnectionId, connection.id);
+
+    return;
+  }
+
+  if (change.type === 'relabel-flowchart-connection') {
+    await relabelFlowchartConnectionAction({
+      projectId,
+      connectionId: change.connectionId,
+      label: change.label,
+    });
 
     return;
   }

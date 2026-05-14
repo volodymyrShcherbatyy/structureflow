@@ -169,6 +169,7 @@ function FlowCanvasContent() {
     pendingConnection,
     setPendingConnection,
     addTypedEdgeFromPending,
+    editFlowchartConnectionLabel,
   } = useCanvasStore();
   const currentScopeId = useScopeStore((state) => state.currentScopeId);
   const scopeStackLength = useScopeStore((state) => state.scopeStack.length);
@@ -460,6 +461,15 @@ function FlowCanvasContent() {
               setSelectedNode(node.id);
             }}
             onPaneClick={() => setSelectedNode(null)}
+            onEdgeDoubleClick={(_, edge) => {
+              if (
+                edge.data &&
+                'connectionKind' in edge.data &&
+                edge.data.connectionKind === 'flowchart'
+              ) {
+                editFlowchartConnectionLabel(edge.id);
+              }
+            }}
           >
             <ScopeBoundaryFrame
               currentScopeId={currentScopeId}
