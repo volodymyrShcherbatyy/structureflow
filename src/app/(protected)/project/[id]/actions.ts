@@ -161,8 +161,8 @@ export async function renameNodeAction(input: { projectId: string; nodeId: strin
 }
 
 export async function deleteNodeAction(input: { projectId: string; nodeId: string }) {
-  const { nodeRepository, edgeRepository } = await assertOwnership(input.projectId);
-  const deleteNode = new DeleteNode(nodeRepository, edgeRepository);
+  const { nodeRepository, edgeRepository, portRepository, flowchartConnectionRepository, } = await assertOwnership(input.projectId);
+  const deleteNode = new DeleteNode(nodeRepository, edgeRepository, portRepository, flowchartConnectionRepository,);
 
   return deleteNode.execute({ nodeId: input.nodeId });
 }
@@ -271,8 +271,15 @@ export async function deleteFlowchartElementAction(input: {
   projectId: string;
   elementId: string;
 }) {
-  const { flowchartElementRepository } = await assertOwnership(input.projectId);
-  const deleteFlowchartElement = new DeleteFlowchartElement(flowchartElementRepository);
+  const {
+    flowchartElementRepository,
+    flowchartConnectionRepository,
+  } = await assertOwnership(input.projectId);
+
+  const deleteFlowchartElement = new DeleteFlowchartElement(
+    flowchartElementRepository,
+    flowchartConnectionRepository,
+  );
 
   return deleteFlowchartElement.execute({
     elementId: input.elementId,

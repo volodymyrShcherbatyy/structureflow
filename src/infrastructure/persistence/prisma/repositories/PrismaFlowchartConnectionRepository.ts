@@ -43,4 +43,44 @@ export class PrismaFlowchartConnectionRepository
       where: { id: id.toString() },
     });
   }
+
+  async deleteByEndpoint(kind: string, id: string): Promise<void> {
+    await this.prisma.flowchartConnection.deleteMany({
+      where: {
+        OR: [
+          {
+            sourceKind: kind,
+            sourceId: id,
+          },
+          {
+            targetKind: kind,
+            targetId: id,
+          },
+        ],
+      },
+    });
+  }
+
+  async deleteByEndpoints(
+    endpoints: Array<{ kind: string; id: string }>,
+  ): Promise<void> {
+    if (endpoints.length === 0) {
+      return;
+    }
+
+    await this.prisma.flowchartConnection.deleteMany({
+      where: {
+        OR: endpoints.flatMap((endpoint) => [
+          {
+            sourceKind: endpoint.kind,
+            sourceId: endpoint.id,
+          },
+          {
+            targetKind: endpoint.kind,
+            targetId: endpoint.id,
+          },
+        ]),
+      },
+    });
+  }
 }

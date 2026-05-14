@@ -7,4 +7,7 @@ export interface IFlowchartConnectionRepository {
   findAllByProject(projectId: ProjectId): Promise<FlowchartConnection[]>;
   save(connection: FlowchartConnection): Promise<void>;
   delete(id: FlowchartConnectionId): Promise<void>;
+
+  deleteByEndpoint(kind: string, id: string): Promise<void>;
+  deleteByEndpoints(endpoints: Array<{ kind: string; id: string }>): Promise<void>;
 }
