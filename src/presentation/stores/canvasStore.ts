@@ -166,6 +166,27 @@ function resolveEndpointForPersistence(
   };
 }
 
+function flowchartEdgeTouchesEndpoint(
+  edge: CanvasEdge,
+  endpoint: { kind: CanvasEndpointKind; id: string },
+): boolean {
+  if (
+    !edge.data ||
+    !('connectionKind' in edge.data) ||
+    edge.data.connectionKind !== 'flowchart'
+  ) {
+    return false;
+  }
+
+  const sourceKind = edge.data.sourceKind;
+  const targetKind = edge.data.targetKind;
+
+  return (
+    (sourceKind === endpoint.kind && edge.source === endpoint.id) ||
+    (targetKind === endpoint.kind && edge.target === endpoint.id)
+  );
+}
+
 function resolveCanvasEndpoint(
   nodes: CanvasNode[],
   endpointId: string,
@@ -319,6 +340,39 @@ function getDefaultFlowchartConnectionLabel(
   return undefined;
 }
 
+function getDeletedNodeFlowchartEndpoints(
+  nodes: CanvasNode[],
+  node: CanvasNode,
+): Array<{ kind: CanvasEndpointKind; id: string }> {
+  if (node.type === 'flowchartShapeNode' && 'elementId' in node.data) {
+    return [{ kind: 'flowchart-element', id: node.data.elementId }];
+  }
+
+  if (node.type === 'blockNode') {
+    const endpoints: Array<{ kind: CanvasEndpointKind; id: string }> = [
+      { kind: 'node', id: node.id },
+    ];
+
+    nodes.forEach((candidate) => {
+      if (
+        candidate.type === 'portNode' &&
+        'nodeId' in candidate.data &&
+        'portId' in candidate.data &&
+        candidate.data.nodeId === node.id
+      ) {
+        endpoints.push({
+          kind: 'port',
+          id: candidate.data.portId,
+        });
+      }
+    });
+
+    return endpoints;
+  }
+
+  return [];
+}
+
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
   nodes: [],
   edges: [],
@@ -346,10 +400,10 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   })),
 
   onNodesChange: (changes) => set((state) => {
-      const safeChanges = changes.filter((change) => {
-        if (change.type !== 'remove') {
-          return true;
-        }
+    const safeChanges = changes.filter((change) => {
+      if (change.type !== 'remove') {
+        return true;
+      }
 
       const node = state.nodes.find((item) => item.id === change.id);
 
@@ -396,7 +450,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
 
       if (change.type === 'remove') {
-
         const removedNode = state.nodes.find((node) => node.id === change.id);
 
         if (removedNode?.type === 'flowchartShapeNode' && 'elementId' in removedNode.data) {
@@ -412,8 +465,29 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
     });
 
+    const deletedFlowchartEndpoints = safeChanges
+      .filter((change) => change.type === 'remove')
+      .flatMap((change) => {
+        const removedNode = state.nodes.find((node) => node.id === change.id);
+
+        return removedNode
+          ? getDeletedNodeFlowchartEndpoints(state.nodes, removedNode)
+          : [];
+      });
+
+    const nextEdges =
+      deletedFlowchartEndpoints.length > 0
+        ? state.edges.filter(
+            (edge) =>
+              !deletedFlowchartEndpoints.some((endpoint) =>
+                flowchartEdgeTouchesEndpoint(edge, endpoint),
+              ),
+          )
+        : state.edges;
+
     return {
       nodes: nextNodes,
+      edges: nextEdges,
     };
   }),
 
@@ -762,21 +836,42 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
 
       if (change.type === 'delete-flowchart-element') {
-        const filtered = state.pendingChanges.filter(
-          (pending) =>
-            !(
-              pending.type === 'move-flowchart-element' &&
-              pending.elementId === change.elementId
-            ) &&
-            !(
-              pending.type === 'rename-flowchart-element' &&
-              pending.elementId === change.elementId
-            ) &&
-            !(
-              pending.type === 'resize-flowchart-element' &&
-              pending.elementId === change.elementId
-            ),
-        );
+        const filtered = state.pendingChanges.filter((pending) => {
+          if (
+            pending.type === 'move-flowchart-element' &&
+            pending.elementId === change.elementId
+          ) {
+            return false;
+          }
+
+          if (
+            pending.type === 'rename-flowchart-element' &&
+            pending.elementId === change.elementId
+          ) {
+            return false;
+          }
+
+          if (
+            pending.type === 'resize-flowchart-element' &&
+            pending.elementId === change.elementId
+          ) {
+            return false;
+          }
+
+          if (
+            pending.type === 'connect-flowchart-connection' &&
+            (
+              (pending.source.kind === 'flowchart-element' &&
+                pending.source.id === change.elementId) ||
+              (pending.target.kind === 'flowchart-element' &&
+                pending.target.id === change.elementId)
+            )
+          ) {
+            return false;
+          }
+
+          return true;
+        });
 
         return {
           pendingChanges: [...filtered, change],

@@ -1,6 +1,7 @@
 import { FlowchartElementNotFoundError } from '../../../domain/errors/FlowchartElementNotFoundError';
 import { FlowchartElementId } from '../../../domain/value-objects/FlowchartElementId';
 import { IFlowchartElementRepository } from '../../ports/IFlowchartElementRepository';
+import { IFlowchartConnectionRepository } from '../../ports/IFlowchartConnectionRepository';
 
 export type DeleteFlowchartElementInput = {
   elementId: string;
@@ -11,7 +12,10 @@ export type DeleteFlowchartElementOutput = {
 };
 
 export class DeleteFlowchartElement {
-  constructor(private readonly repository: IFlowchartElementRepository) {}
+  constructor(
+    private readonly repository: IFlowchartElementRepository,
+    private readonly connectionRepository?: IFlowchartConnectionRepository,
+  ) {}
 
   public async execute(input: DeleteFlowchartElementInput): Promise<DeleteFlowchartElementOutput> {
     const elementId = FlowchartElementId.from(input.elementId);
@@ -20,6 +24,11 @@ export class DeleteFlowchartElement {
     if (!element) {
       throw new FlowchartElementNotFoundError(elementId.toString());
     }
+
+    await this.connectionRepository?.deleteByEndpoint(
+      'flowchart-element',
+      elementId.toString(),
+    );
 
     await this.repository.delete(elementId);
 

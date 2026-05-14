@@ -27,4 +27,24 @@ export class InMemoryFlowchartConnectionRepository
   async delete(id: FlowchartConnectionId): Promise<void> {
     this.connections.delete(id.toString());
   }
+
+  async deleteByEndpoint(kind: string, id: string): Promise<void> {
+    [...this.connections.entries()].forEach(([connectionId, connection]) => {
+      if (connection.connectsEndpointId(kind, id)) {
+        this.connections.delete(connectionId);
+      }
+    });
+  }
+
+  async deleteByEndpoints(
+    endpoints: Array<{ kind: string; id: string }>,
+  ): Promise<void> {
+    endpoints.forEach((endpoint) => {
+      [...this.connections.entries()].forEach(([connectionId, connection]) => {
+        if (connection.connectsEndpointId(endpoint.kind, endpoint.id)) {
+          this.connections.delete(connectionId);
+        }
+      });
+    });
+  }
 }
