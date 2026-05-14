@@ -35,10 +35,7 @@ import { RelabelFlowchartConnection } from '../../../../core/application/use-cas
 async function assertOwnership(projectId: string) {
   const userId = await getUserId();
   const projectRepository = new PrismaProjectRepository(prisma);
-  const projectIdVO =
-  typeof projectId === 'string'
-    ? ProjectId.from(projectId)
-    : projectId;
+  const projectIdVO = ProjectId.from(projectId);
 
   const project = await projectRepository.findById(projectIdVO);
 
@@ -162,8 +159,19 @@ export async function renameNodeAction(input: { projectId: string; nodeId: strin
 }
 
 export async function deleteNodeAction(input: { projectId: string; nodeId: string }) {
-  const { nodeRepository, edgeRepository, portRepository, flowchartConnectionRepository, } = await assertOwnership(input.projectId);
-  const deleteNode = new DeleteNode(nodeRepository, edgeRepository, portRepository, flowchartConnectionRepository,);
+  const {
+    nodeRepository,
+    edgeRepository,
+    portRepository,
+    flowchartConnectionRepository,
+  } = await assertOwnership(input.projectId);
+
+  const deleteNode = new DeleteNode(
+    nodeRepository,
+    edgeRepository,
+    portRepository,
+    flowchartConnectionRepository,
+  );
 
   return deleteNode.execute({ nodeId: input.nodeId });
 }
