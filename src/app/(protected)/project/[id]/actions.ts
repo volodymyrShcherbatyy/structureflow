@@ -30,6 +30,7 @@ import { ConnectFlowchartElements } from '../../../../core/application/use-cases
 import { DeleteFlowchartConnection } from '../../../../core/application/use-cases/flowchart/DeleteFlowchartConnection';
 import { PrismaFlowchartConnectionRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaFlowchartConnectionRepository';
 import { coreFlowchartConnectionToFlow } from '../../../../presentation/canvas/mappers/flowchartConnectionMapper';
+import { RelabelFlowchartConnection } from '../../../../core/application/use-cases/flowchart/RelabelFlowchartConnection';
 
 async function assertOwnership(projectId: string) {
   const userId = await getUserId();
@@ -321,5 +322,22 @@ export async function deleteFlowchartConnectionAction(input: {
 
   return deleteFlowchartConnection.execute({
     connectionId: input.connectionId,
+  });
+}
+
+export async function relabelFlowchartConnectionAction(input: {
+  projectId: string;
+  connectionId: string;
+  label?: string;
+}) {
+  const { flowchartConnectionRepository } = await assertOwnership(input.projectId);
+
+  const relabelFlowchartConnection = new RelabelFlowchartConnection(
+    flowchartConnectionRepository,
+  );
+
+  return relabelFlowchartConnection.execute({
+    connectionId: input.connectionId,
+    label: input.label,
   });
 }

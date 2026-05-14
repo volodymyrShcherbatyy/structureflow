@@ -110,7 +110,12 @@ export type PendingChange =
   | {
       type: 'delete-flowchart-connection';
       connectionId: string;
-    };
+    }
+  | {
+    type: 'relabel-flowchart-connection';
+    connectionId: string;
+    label?: string;
+  };
 
 type CanvasStore = {
   nodes: CanvasNode[];
@@ -144,6 +149,8 @@ type CanvasStore = {
   updateFlowchartElementLabel: (elementId: string, label: string) => void;
   resizeFlowchartElement: (elementId: string, width: number, height: number,) => void;
   replaceFlowchartConnectionId: (tempConnectionId: string, connectionId: string,) => void;
+  updateFlowchartConnectionLabel: (connectionId: string, label?: string,) => void;
+  editFlowchartConnectionLabel: (connectionId: string) => void;
 };
 
 function resolveEndpointForPersistence(
@@ -701,6 +708,24 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }),
     })),
 
+    updateFlowchartConnectionLabel: (connectionId, label) => set((state) => ({
+      edges: state.edges.map((edge) => {
+        if (
+          edge.id !== connectionId ||
+          !edge.data ||
+          !('connectionKind' in edge.data) ||
+          edge.data.connectionKind !== 'flowchart'
+        ) {
+          return edge;
+        }
+
+        return {
+          ...edge,
+          label,
+        };
+      }),
+    })),
+
     resizeFlowchartElement: (elementId, width, height) => set((state) => ({
       nodes: state.nodes.map((node) => {
         if (
@@ -727,6 +752,36 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         };
       }),
     })),
+
+    editFlowchartConnectionLabel: (connectionId) => {
+      const edge = get().edges.find((item) => item.id === connectionId);
+
+      if (
+        !edge ||
+        !edge.data ||
+        !('connectionKind' in edge.data) ||
+        edge.data.connectionKind !== 'flowchart'
+      ) {
+        return;
+      }
+
+      const currentLabel =
+        typeof edge.label === 'string' ? edge.label : edge.label ? String(edge.label) : '';
+
+      const nextLabel = window.prompt('Flowchart connection label', currentLabel);
+
+      if (nextLabel === null) {
+        return;
+      }
+
+      get().updateFlowchartConnectionLabel(connectionId, nextLabel);
+
+      get().addPendingChange({
+        type: 'relabel-flowchart-connection',
+        connectionId,
+        label: nextLabel,
+      });
+    },
 
 
   updateExternalHandleOffset: (portId, offset) => set((state) => ({
@@ -906,6 +961,19 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         };
       }
 
+      if (change.type === 'relabel-flowchart-connection') {
+        const filtered = state.pendingChanges.filter(
+          (pending) =>
+            !(
+              pending.type === 'relabel-flowchart-connection' &&
+              pending.connectionId === change.connectionId
+            ),
+        );
+
+        return {
+          pendingChanges: [...filtered, change],
+        };
+      }
 
       if (change.type === 'move') {
         const filtered = state.pendingChanges.filter(
