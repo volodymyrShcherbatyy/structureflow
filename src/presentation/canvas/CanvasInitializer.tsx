@@ -54,7 +54,18 @@ export function CanvasInitializer({
     setProjectName(projectName);
     
     initCanvas([...initialNodes, ...initialPorts, ...initialFlowchartElements], [...initialEdges, ...initialFlowchartConnections]);
-  }, [projectId, projectName, initialNodes, initialEdges, initialPorts, initialFlowchartElements, initialFlowchartConnections, initCanvas, setProjectId, setProjectName]);
+  }, [
+        projectId,
+        projectName,
+        initialNodes,
+        initialEdges,
+        initialPorts,
+        initialFlowchartElements,
+        initialFlowchartConnections,
+        initCanvas,
+        setProjectId,
+        setProjectName,
+      ]);
   
   return (
     <ReactFlowProvider>

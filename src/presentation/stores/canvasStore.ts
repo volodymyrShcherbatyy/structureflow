@@ -228,6 +228,10 @@ function resolveCanvasEndpoint(
   };
 }
 
+
+// Regular architecture edges are used only when both endpoints are structural:
+// node → node, node → port, port → node, port → port.
+// Any connection involving a flowchart element is persisted as FlowchartConnection.
 function shouldUseRegularArchitectureEdge(
   sourceEndpoint: { kind: CanvasEndpointKind },
   targetEndpoint: { kind: CanvasEndpointKind },
