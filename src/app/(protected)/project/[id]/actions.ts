@@ -31,6 +31,7 @@ import { DeleteFlowchartConnection } from '../../../../core/application/use-case
 import { PrismaFlowchartConnectionRepository } from '../../../../infrastructure/persistence/prisma/repositories/PrismaFlowchartConnectionRepository';
 import { coreFlowchartConnectionToFlow } from '../../../../presentation/canvas/mappers/flowchartConnectionMapper';
 import { RelabelFlowchartConnection } from '../../../../core/application/use-cases/flowchart/RelabelFlowchartConnection';
+import { ExportProjectJson } from '../../../../core/application/use-cases/project/ExportProjectJson';
 
 async function assertOwnership(projectId: string) {
   const userId = await getUserId();
@@ -347,5 +348,29 @@ export async function relabelFlowchartConnectionAction(input: {
   return relabelFlowchartConnection.execute({
     connectionId: input.connectionId,
     label: input.label,
+  });
+}
+
+export async function exportProjectJsonAction(input: { projectId: string }) {
+  const {
+    projectRepository,
+    nodeRepository,
+    edgeRepository,
+    portRepository,
+    flowchartElementRepository,
+    flowchartConnectionRepository,
+  } = await assertOwnership(input.projectId);
+
+  const exportProjectJson = new ExportProjectJson(
+    projectRepository,
+    nodeRepository,
+    edgeRepository,
+    portRepository,
+    flowchartElementRepository,
+    flowchartConnectionRepository,
+  );
+
+  return exportProjectJson.execute({
+    projectId: input.projectId,
   });
 }

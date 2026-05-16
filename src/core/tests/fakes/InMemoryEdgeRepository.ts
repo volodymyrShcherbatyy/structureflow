@@ -2,6 +2,7 @@ import { IEdgeRepository } from '../../application/ports/IEdgeRepository';
 import { Edge } from '../../domain/entities/Edge';
 import { EdgeId } from '../../domain/value-objects/EdgeId';
 import { NodeId } from '../../domain/value-objects/NodeId';
+import { ProjectId } from '../../domain/value-objects/ProjectId';
 
 export class InMemoryEdgeRepository implements IEdgeRepository {
   private readonly edges = new Map<string, Edge>();
@@ -20,5 +21,11 @@ export class InMemoryEdgeRepository implements IEdgeRepository {
 
   public async delete(id: EdgeId): Promise<void> {
     this.edges.delete(id.toString());
+  }
+
+  async findAllByProject(projectId: ProjectId): Promise<Edge[]> {
+    return [...this.edges.values()].filter((edge) =>
+      edge.projectId.equals(projectId),
+    );
   }
 }
