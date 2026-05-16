@@ -10,6 +10,13 @@ import { ProjectId } from '../../../core/domain/value-objects/ProjectId';
 import { getUserId } from '../../../infrastructure/auth/getUserId';
 import { prisma } from '../../../infrastructure/persistence/prisma/client';
 import { PrismaProjectRepository } from '../../../infrastructure/persistence/prisma/repositories/PrismaProjectRepository';
+import { ImportProjectJson } from '../../../core/application/use-cases/project/ImportProjectJson';
+import { PrismaEdgeRepository } from '../../../infrastructure/persistence/prisma/repositories/PrismaEdgeRepository';
+import { PrismaFlowchartConnectionRepository } from '../../../infrastructure/persistence/prisma/repositories/PrismaFlowchartConnectionRepository';
+import { PrismaFlowchartElementRepository } from '../../../infrastructure/persistence/prisma/repositories/PrismaFlowchartElementRepository';
+import { PrismaNodeRepository } from '../../../infrastructure/persistence/prisma/repositories/PrismaNodeRepository';
+import { PrismaPortRepository } from '../../../infrastructure/persistence/prisma/repositories/PrismaPortRepository';
+import { StructureFlowProjectJsonV1 } from '../../../core/application/use-cases/project/ProjectJsonSnapshot';
 
 const MAX_PROJECT_NAME_LENGTH = 100;
 
@@ -92,4 +99,28 @@ export async function deleteProjectAction(projectId: string) {
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'Unable to delete project.' };
   }
+}
+
+export async function importProjectJsonAction(snapshot: StructureFlowProjectJsonV1) {
+  const ownerId = await getUserId();
+
+  const importProjectJson = new ImportProjectJson(
+    new PrismaProjectRepository(prisma),
+    new PrismaNodeRepository(prisma),
+    new PrismaEdgeRepository(prisma),
+    new PrismaPortRepository(prisma),
+    new PrismaFlowchartElementRepository(prisma),
+    new PrismaFlowchartConnectionRepository(prisma),
+  );
+
+  const { project } = await importProjectJson.execute({
+    ownerId,
+    snapshot,
+  });
+
+  revalidatePath('/dashboard');
+
+  return {
+    projectId: project.id.toString(),
+  };
 }
