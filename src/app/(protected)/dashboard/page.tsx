@@ -7,6 +7,7 @@ import { ProjectGrid } from '../../../presentation/dashboard/ProjectGrid';
 import type { DashboardProjectDto } from '../../../presentation/dashboard/types';
 import { getServerSession } from '../../../infrastructure/auth/nextauth/getServerSession'
 import { LogoutButton } from '../../../presentation/auth/LogoutButton'
+import { ImportProjectJsonButton } from '../../../presentation/dashboard/ImportProjectJsonButton';
 
 export default async function DashboardPage() {
   const userId = await getUserId();
@@ -51,6 +52,7 @@ export default async function DashboardPage() {
 
             <LogoutButton />
 
+            <ImportProjectJsonButton />
             <CreateProjectButton />
           </div>
         </header>
