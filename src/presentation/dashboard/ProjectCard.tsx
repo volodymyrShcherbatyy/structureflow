@@ -7,6 +7,7 @@ import { useMemo, useState, useTransition } from 'react';
 import type { DashboardProjectDto } from './types';
 import { renameProjectAction } from '../../app/(protected)/dashboard/actions';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
+import { ExportProjectJsonButton } from './ExportProjectJsonButton';
 
 type ProjectCardProps = {
   project: DashboardProjectDto;
@@ -107,6 +108,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+        <ExportProjectJsonButton projectId={project.id} projectName={project.name} />
         <div style={{ flex: 1, minWidth: 0 }}>
           {isEditing ? (
             <input
