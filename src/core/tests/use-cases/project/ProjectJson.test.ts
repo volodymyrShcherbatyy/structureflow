@@ -188,6 +188,12 @@ async function seedProject(repositories: TestRepositories) {
   };
 }
 
+function cloneSnapshot(
+  snapshot: StructureFlowProjectJsonV1,
+): StructureFlowProjectJsonV1 {
+  return JSON.parse(JSON.stringify(snapshot)) as StructureFlowProjectJsonV1;
+}
+
 describe('ExportProjectJson', () => {
   it('exports a complete project snapshot', async () => {
     const repositories = createRepositories();
@@ -473,6 +479,155 @@ describe('ImportProjectJson', () => {
       }),
     ).rejects.toThrow('Invalid project JSON format.');
   });
+
+  it('rejects snapshot when node parentId references missing node', async () => {
+    const repositories = createRepositories();
+    const source = createRepositories();
+    const seeded = await seedProject(source);
+    const exportUseCase = createExportUseCase(source);
+
+    const { snapshot } = await exportUseCase.execute({
+      projectId: seeded.project.id.toString(),
+    });
+
+    const invalidSnapshot = cloneSnapshot(snapshot);
+    invalidSnapshot.nodes[1].parentId = '99999999-9999-4999-8999-999999999999';
+
+    const useCase = createImportUseCase(repositories);
+
+    await expect(
+      useCase.execute({
+        ownerId: 'owner-1',
+        snapshot: invalidSnapshot,
+      }),
+    ).rejects.toThrow('Imported node references missing parent node');
+  });
+
+  it('rejects snapshot when port references missing node', async () => {
+    const repositories = createRepositories();
+    const source = createRepositories();
+    const seeded = await seedProject(source);
+    const exportUseCase = createExportUseCase(source);
+
+    const { snapshot } = await exportUseCase.execute({
+      projectId: seeded.project.id.toString(),
+    });
+
+    const invalidSnapshot = cloneSnapshot(snapshot);
+    invalidSnapshot.ports[0].nodeId = '99999999-9999-4999-8999-999999999999';
+
+    const useCase = createImportUseCase(repositories);
+
+    await expect(
+      useCase.execute({
+        ownerId: 'owner-1',
+        snapshot: invalidSnapshot,
+      }),
+    ).rejects.toThrow('Imported port references missing node');
+  });
+
+  it('rejects snapshot when edge references missing source node', async () => {
+    const repositories = createRepositories();
+    const source = createRepositories();
+    const seeded = await seedProject(source);
+    const exportUseCase = createExportUseCase(source);
+
+    const { snapshot } = await exportUseCase.execute({
+      projectId: seeded.project.id.toString(),
+    });
+
+    const invalidSnapshot = cloneSnapshot(snapshot);
+    invalidSnapshot.edges[0].sourceId = '99999999-9999-4999-8999-999999999999';
+
+    const useCase = createImportUseCase(repositories);
+
+    await expect(
+      useCase.execute({
+        ownerId: 'owner-1',
+        snapshot: invalidSnapshot,
+      }),
+    ).rejects.toThrow('Imported edge references missing source node');
+  });
+
+  it('rejects snapshot when flowchart element references missing scope node', async () => {
+    const repositories = createRepositories();
+    const source = createRepositories();
+    const seeded = await seedProject(source);
+    const exportUseCase = createExportUseCase(source);
+
+    const { snapshot } = await exportUseCase.execute({
+      projectId: seeded.project.id.toString(),
+    });
+
+    const invalidSnapshot = cloneSnapshot(snapshot);
+    invalidSnapshot.flowchartElements[0].scopeId =
+      '99999999-9999-4999-8999-999999999999';
+
+    const useCase = createImportUseCase(repositories);
+
+    await expect(
+      useCase.execute({
+        ownerId: 'owner-1',
+        snapshot: invalidSnapshot,
+      }),
+    ).rejects.toThrow('Imported flowchart element references missing scope node');
+  });
+
+  it('rejects snapshot when flowchart connection references missing endpoint', async () => {
+    const repositories = createRepositories();
+    const source = createRepositories();
+    const seeded = await seedProject(source);
+    const exportUseCase = createExportUseCase(source);
+
+    const { snapshot } = await exportUseCase.execute({
+      projectId: seeded.project.id.toString(),
+    });
+
+    const invalidSnapshot = cloneSnapshot(snapshot);
+    invalidSnapshot.flowchartConnections[0].target = {
+      kind: 'flowchart-element',
+      id: '99999999-9999-4999-8999-999999999999',
+      anchor: 'left:target',
+    };
+
+    const useCase = createImportUseCase(repositories);
+
+    await expect(
+      useCase.execute({
+        ownerId: 'owner-1',
+        snapshot: invalidSnapshot,
+      }),
+    ).rejects.toThrow(
+      'references missing flowchart element endpoint',
+    );
+  });
+
+  it('rejects snapshot with duplicate node ids', async () => {
+    const repositories = createRepositories();
+    const source = createRepositories();
+    const seeded = await seedProject(source);
+    const exportUseCase = createExportUseCase(source);
+
+    const { snapshot } = await exportUseCase.execute({
+      projectId: seeded.project.id.toString(),
+    });
+
+    const invalidSnapshot = cloneSnapshot(snapshot);
+    invalidSnapshot.nodes[1].id = invalidSnapshot.nodes[0].id;
+
+    const useCase = createImportUseCase(repositories);
+
+    await expect(
+      useCase.execute({
+        ownerId: 'owner-1',
+        snapshot: invalidSnapshot,
+      }),
+    ).rejects.toThrow('Imported project contains duplicate node id');
+  });
+
+  
+
+
 });
 
 describe('Project JSON round-trip', () => {

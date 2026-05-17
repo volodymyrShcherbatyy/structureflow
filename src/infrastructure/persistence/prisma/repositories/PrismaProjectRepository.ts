@@ -1,11 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaDatabaseClient } from '../PrismaDatabaseClient';
 import { IProjectRepository } from '../../../../core/application/ports/IProjectRepository';
 import { Project } from '../../../../core/domain/entities/Project';
 import { ProjectId } from '../../../../core/domain/value-objects/ProjectId';
 import { ProjectMapper } from '../mappers/ProjectMapper';
 
 export class PrismaProjectRepository implements IProjectRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaDatabaseClient) {}
 
   async findById(id: ProjectId): Promise<Project | null> {
     const record = await this.prisma.project.findUnique({

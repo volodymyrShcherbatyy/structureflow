@@ -39,6 +39,69 @@ export type ImportProjectJsonOutput = {
   project: Project;
 };
 
+function assertUniqueIds(ids: string[], entityName: string): void {
+  const seen = new Set<string>();
+
+  ids.forEach((id) => {
+    if (seen.has(id)) {
+      throw new Error(`Imported project contains duplicate ${entityName} id: ${id}`);
+    }
+
+    seen.add(id);
+  });
+}
+
+function assertKnownId(
+  knownIds: Set<string>,
+  id: string | undefined,
+  message: string,
+): void {
+  if (!id) {
+    return;
+  }
+
+  if (!knownIds.has(id)) {
+    throw new Error(message);
+  }
+}
+
+function assertEndpointExists(
+  endpoint: StructureFlowProjectJsonV1['flowchartConnections'][number]['source'],
+  nodeIds: Set<string>,
+  portIds: Set<string>,
+  flowchartElementIds: Set<string>,
+  context: string,
+): void {
+  if (endpoint.kind === 'node') {
+    assertKnownId(
+      nodeIds,
+      endpoint.id,
+      `${context} references missing node endpoint: ${endpoint.id}`,
+    );
+    return;
+  }
+
+  if (endpoint.kind === 'port') {
+    assertKnownId(
+      portIds,
+      endpoint.id,
+      `${context} references missing port endpoint: ${endpoint.id}`,
+    );
+    return;
+  }
+
+  if (endpoint.kind === 'flowchart-element') {
+    assertKnownId(
+      flowchartElementIds,
+      endpoint.id,
+      `${context} references missing flowchart element endpoint: ${endpoint.id}`,
+    );
+    return;
+  }
+
+  throw new Error(`${context} has unsupported endpoint kind: ${endpoint.kind}`);
+}
+
 function assertValidSnapshot(snapshot: StructureFlowProjectJsonV1): void {
   if (snapshot.format !== STRUCTUREFLOW_PROJECT_FORMAT) {
     throw new Error('Invalid project JSON format.');
@@ -71,6 +134,98 @@ function assertValidSnapshot(snapshot: StructureFlowProjectJsonV1): void {
   if (!Array.isArray(snapshot.flowchartConnections)) {
     throw new Error('Imported project flowchartConnections must be an array.');
   }
+
+  const nodeIds = new Set(snapshot.nodes.map((node) => node.id));
+  const portIds = new Set(snapshot.ports.map((port) => port.id));
+  const edgeIds = new Set(snapshot.edges.map((edge) => edge.id));
+  const flowchartElementIds = new Set(
+    snapshot.flowchartElements.map((element) => element.id),
+  );
+  const flowchartConnectionIds = new Set(
+    snapshot.flowchartConnections.map((connection) => connection.id),
+  );
+
+  assertUniqueIds(snapshot.nodes.map((node) => node.id), 'node');
+  assertUniqueIds(snapshot.ports.map((port) => port.id), 'port');
+  assertUniqueIds(snapshot.edges.map((edge) => edge.id), 'edge');
+  assertUniqueIds(
+    snapshot.flowchartElements.map((element) => element.id),
+    'flowchart element',
+  );
+  assertUniqueIds(
+    snapshot.flowchartConnections.map((connection) => connection.id),
+    'flowchart connection',
+  );
+
+  snapshot.nodes.forEach((node) => {
+    assertKnownId(
+      nodeIds,
+      node.parentId,
+      `Imported node references missing parent node: ${node.parentId}`,
+    );
+  });
+
+  snapshot.ports.forEach((port) => {
+    assertKnownId(
+      nodeIds,
+      port.nodeId,
+      `Imported port references missing node: ${port.nodeId}`,
+    );
+
+    const expectedPortId = `${port.nodeId}:${port.side}`;
+
+    if (port.id !== expectedPortId) {
+      throw new Error(
+        `Imported port id does not match node/side: expected ${expectedPortId}, received ${port.id}`,
+      );
+    }
+  });
+
+  snapshot.edges.forEach((edge) => {
+    assertKnownId(
+      nodeIds,
+      edge.sourceId,
+      `Imported edge references missing source node: ${edge.sourceId}`,
+    );
+
+    assertKnownId(
+      nodeIds,
+      edge.targetId,
+      `Imported edge references missing target node: ${edge.targetId}`,
+    );
+  });
+
+  snapshot.flowchartElements.forEach((element) => {
+    assertKnownId(
+      nodeIds,
+      element.scopeId,
+      `Imported flowchart element references missing scope node: ${element.scopeId}`,
+    );
+  });
+
+  snapshot.flowchartConnections.forEach((connection) => {
+    assertKnownId(
+      nodeIds,
+      connection.scopeId,
+      `Imported flowchart connection references missing scope node: ${connection.scopeId}`,
+    );
+
+    assertEndpointExists(
+      connection.source,
+      nodeIds,
+      portIds,
+      flowchartElementIds,
+      `Imported flowchart connection ${connection.id} source`,
+    );
+
+    assertEndpointExists(
+      connection.target,
+      nodeIds,
+      portIds,
+      flowchartElementIds,
+      `Imported flowchart connection ${connection.id} target`,
+    );
+  });
 }
 
 function remapRequiredId(

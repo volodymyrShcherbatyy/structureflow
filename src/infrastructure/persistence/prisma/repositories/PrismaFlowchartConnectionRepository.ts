@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaDatabaseClient } from '../PrismaDatabaseClient';
 
 import { IFlowchartConnectionRepository } from '../../../../core/application/ports/IFlowchartConnectionRepository';
 import { FlowchartConnection } from '../../../../core/domain/entities/FlowchartConnection';
@@ -9,7 +9,7 @@ import { FlowchartConnectionMapper } from '../mappers/FlowchartConnectionMapper'
 export class PrismaFlowchartConnectionRepository
   implements IFlowchartConnectionRepository
 {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaDatabaseClient) {}
 
   async findById(
     id: FlowchartConnectionId,

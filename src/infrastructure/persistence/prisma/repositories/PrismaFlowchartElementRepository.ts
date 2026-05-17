@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaDatabaseClient } from '../PrismaDatabaseClient';
 
 import { IFlowchartElementRepository } from '../../../../core/application/ports/IFlowchartElementRepository';
 import { FlowchartElement } from '../../../../core/domain/entities/FlowchartElement';
@@ -7,7 +7,7 @@ import { ProjectId } from '../../../../core/domain/value-objects/ProjectId';
 import { FlowchartElementMapper } from '../mappers/FlowchartElementMapper';
 
 export class PrismaFlowchartElementRepository implements IFlowchartElementRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaDatabaseClient) {}
 
   async findById(id: FlowchartElementId): Promise<FlowchartElement | null> {
     const record = await this.prisma.flowchartElement.findUnique({
