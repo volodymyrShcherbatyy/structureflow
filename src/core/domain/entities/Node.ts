@@ -10,7 +10,7 @@ export type NodeProps = {
   label: string;
   description?: string;
   position: Position;
-  projectId: ProjectId; // ✅ NEW
+  projectId: ProjectId;
   parentId?: NodeId;
 };
 
@@ -20,7 +20,7 @@ export class Node {
   public readonly label: string;
   public readonly description?: string;
   public readonly position: Position;
-  public readonly projectId: ProjectId; // ✅ NEW
+  public readonly projectId: ProjectId;
   public readonly parentId?: NodeId;
 
   constructor(props: NodeProps) {
@@ -29,7 +29,7 @@ export class Node {
     this.label = props.label;
     this.description = props.description;
     this.position = props.position;
-    this.projectId = props.projectId; // ✅ NEW
+    this.projectId = props.projectId;
     this.parentId = props.parentId;
   }
 
@@ -40,6 +40,29 @@ export class Node {
     }
 
     return new Node({ ...this, label });
+  }
+
+  public updateDetails(input: {
+    label?: string;
+    description?: string;
+  }): Node {
+    const label =
+      input.label !== undefined ? input.label.trim() : this.label;
+
+    if (!label) {
+      throw new Error('Node label cannot be empty');
+    }
+
+    const description =
+      input.description !== undefined
+        ? input.description.trim() || undefined
+        : this.description;
+
+    return new Node({
+      ...this,
+      label,
+      description,
+    });
   }
 
   public moveTo(position: Position): Node {

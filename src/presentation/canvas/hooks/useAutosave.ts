@@ -10,6 +10,7 @@ import {
   movePortAction,
   movePortExternalHandleAction,
   renameNodeAction,
+  updateNodeDetailsAction,
   deleteFlowchartElementAction,
   moveFlowchartElementAction,
   renameFlowchartElementAction,
@@ -45,6 +46,16 @@ async function processChange(change: PendingChange, projectId: string) {
 
   if (change.type === 'rename') {
     await renameNodeAction({ projectId, nodeId: change.nodeId, label: change.label });
+    return;
+  }
+
+  if (change.type === 'update-node-details') {
+    await updateNodeDetailsAction({
+      projectId,
+      nodeId: change.nodeId,
+      label: change.label,
+      description: change.description,
+    });
     return;
   }
 

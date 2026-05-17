@@ -52,6 +52,10 @@ const BOUNDARY_HANDLES: BoundaryHandleConfig[] = [
   },
 ];
 
+const NODE_LABEL_MAX_LENGTH = 30;
+const NODE_DESCRIPTION_MAX_LENGTH = 120;
+const NODE_MAX_WIDTH = 200;
+
 function getPortForSide(
   nodes: ReturnType<typeof useCanvasStore.getState>['nodes'],
   nodeId: string,
@@ -69,54 +73,94 @@ function getPortForSide(
 
 export function BlockNode({ id, data, selected }: BlockNodeProps) {
   const nodes = useCanvasStore((state) => state.nodes);
-  const updateNodeLabel = useCanvasStore((state) => state.updateNodeLabel);
+  const updateNodeDetails = useCanvasStore((state) => state.updateNodeDetails);
   const updateExternalHandleOffset = useCanvasStore(
     (state) => state.updateExternalHandleOffset,
   );
   const addPendingChange = useCanvasStore((state) => state.addPendingChange);
   const drillInto = useScopeStore((state) => state.drillInto);
 
-  const [editing, setEditing] = useState(false);
+  const [editingField, setEditingField] = useState<'label' | 'description' | null>(
+    null,
+  );
   const [draftLabel, setDraftLabel] = useState(data.label);
+  const [draftDescription, setDraftDescription] = useState(data.description ?? '');
 
   const color = TYPE_COLORS[data.nodeType] ?? TYPE_COLORS.external;
   const hasChildren = useMemo(() => nodes.some((node) => node.parentId === id), [id, nodes]);
 
-  const commitLabel = () => {
-    const trimmed = draftLabel.trim();
+  const commitDetails = () => {
+    const label = draftLabel.trim();
+    const description = draftDescription.trim();
 
-    if (!trimmed) {
+    if (!label) {
       setDraftLabel(data.label);
-      setEditing(false);
+      setDraftDescription(data.description ?? '');
+      setEditingField(null);
       return;
     }
 
-    if (trimmed !== data.label) {
-      updateNodeLabel(id, trimmed);
-      addPendingChange({ type: 'rename', nodeId: id, label: trimmed });
+    const normalizedDescription = description || undefined;
+
+    const labelChanged = label !== data.label;
+    const descriptionChanged = normalizedDescription !== data.description;
+
+    if (labelChanged || descriptionChanged) {
+      updateNodeDetails(id, {
+        label,
+        description: normalizedDescription,
+      });
+
+      addPendingChange({
+        type: 'update-node-details',
+        nodeId: id,
+        label,
+        description: normalizedDescription,
+      });
     }
 
-    setEditing(false);
+    setEditingField(null);
   };
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      commitLabel();
+  const handleLabelKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      commitDetails();
     }
 
     if (event.key === 'Escape') {
       setDraftLabel(data.label);
-      setEditing(false);
+      setDraftDescription(data.description ?? '');
+      setEditingField(null);
+    }
+  };
+
+  const handleDescriptionKeyDown = (
+    event: KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
+    if (event.key === 'Escape') {
+      setDraftLabel(data.label);
+      setDraftDescription(data.description ?? '');
+      setEditingField(null);
     }
   };
 
   const handleLabelDoubleClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    setEditing(true);
+    setDraftLabel(data.label);
+    setDraftDescription(data.description ?? '');
+    setEditingField('label');
+  };
+
+  const handleDescriptionDoubleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setDraftLabel(data.label);
+    setDraftDescription(data.description ?? '');
+    setEditingField('description');
   };
 
   const handleNodeDoubleClick = () => {
-    if (editing) {
+    if (editingField) {
       return;
     }
 
@@ -127,7 +171,9 @@ export function BlockNode({ id, data, selected }: BlockNodeProps) {
     <div
       onDoubleClick={handleNodeDoubleClick}
       style={{
+        width: NODE_MAX_WIDTH,
         minWidth: 180,
+        maxWidth: NODE_MAX_WIDTH,
         border: selected ? '2px solid #6366f1' : `1px solid ${color.border}`,
         borderRadius: 10,
         overflow: 'visible',
@@ -191,18 +237,26 @@ export function BlockNode({ id, data, selected }: BlockNodeProps) {
       </header>
 
       <div style={{ padding: 10, display: 'grid', gap: 8 }}>
-        {editing ? (
-          <input
+        {editingField === 'label' ? (
+          <textarea
             value={draftLabel}
+            maxLength={NODE_LABEL_MAX_LENGTH}
             onChange={(event) => setDraftLabel(event.target.value)}
-            onBlur={commitLabel}
-            onKeyDown={handleKeyDown}
+            onBlur={commitDetails}
+            onKeyDown={handleLabelKeyDown}
             autoFocus
+            rows={2}
             style={{
               border: '1px solid #d1d5db',
               borderRadius: 6,
               padding: '6px 8px',
-              fontWeight: 400,
+              fontWeight: 600,
+              resize: 'none',
+              width: '100%',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              fontSize: 13,
+              lineHeight: 1.3,
             }}
           />
         ) : (
@@ -216,14 +270,69 @@ export function BlockNode({ id, data, selected }: BlockNodeProps) {
               textAlign: 'left',
               fontWeight: 600,
               cursor: 'text',
+              width: '100%',
+              maxWidth: '100%',
+              whiteSpace: 'normal',
+              overflowWrap: 'anywhere',
+              lineHeight: 1.3,
             }}
-            title="Double click to rename"
+            title="Double click to edit label"
           >
             {data.label}
           </button>
         )}
 
-        {data.description ? <p style={{ margin: 0, fontSize: 12 }}>{data.description}</p> : null}
+        {editingField === 'description' ? (
+          <textarea
+            value={draftDescription}
+            maxLength={NODE_DESCRIPTION_MAX_LENGTH}
+            onChange={(event) => setDraftDescription(event.target.value)}
+            onBlur={commitDetails}
+            onKeyDown={handleDescriptionKeyDown}
+            autoFocus
+            rows={4}
+            placeholder="Add description..."
+            style={{
+              border: '1px solid #d1d5db',
+              borderRadius: 6,
+              padding: '6px 8px',
+              resize: 'vertical',
+              width: '100%',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              fontSize: 12,
+              lineHeight: 1.35,
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            onDoubleClick={handleDescriptionDoubleClick}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              padding: 0,
+              textAlign: 'left',
+              cursor: 'text',
+              width: '100%',
+              maxWidth: '100%',
+              minHeight: 18,
+              color: data.description ? '#374151' : '#9ca3af',
+              fontSize: 12,
+              lineHeight: 1.35,
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'anywhere',
+              display: '-webkit-box',
+              WebkitLineClamp: 5,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+            title="Double click to edit description"
+          >
+            {data.description || 'Double click to add description'}
+          </button>
+        )}
+
         <p style={{ margin: 0, fontSize: 11, color: '#4b5563' }}>
           {hasChildren ? 'Double click to open' : 'Empty scope. Double click to open'}
         </p>

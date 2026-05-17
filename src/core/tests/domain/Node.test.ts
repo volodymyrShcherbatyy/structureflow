@@ -49,4 +49,40 @@ describe('Node', () => {
 
     expect(() => child.nestUnder(parent)).toThrow('Invalid nesting');
   });
+
+  it('updates label and description', () => {
+    const node = new Node({
+      id: NodeId.create(),
+      type: NodeType.from('component'),
+      label: 'Old label',
+      description: 'Old description',
+      position: Position.origin(),
+      projectId: PROJECT_ID,
+    });
+
+    const updated = node.updateDetails({
+      label: 'New label',
+      description: 'New description',
+    });
+
+    expect(updated.label).toBe('New label');
+    expect(updated.description).toBe('New description');
+  });
+
+  it('clears description when updated with empty text', () => {
+    const node = new Node({
+      id: NodeId.create(),
+      type: NodeType.from('component'),
+      label: 'Label',
+      description: 'Description',
+      position: Position.origin(),
+      projectId: PROJECT_ID,
+    });
+
+    const updated = node.updateDetails({
+      description: '   ',
+    });
+
+    expect(updated.description).toBeUndefined();
+  });
 });
