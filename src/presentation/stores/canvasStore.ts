@@ -57,6 +57,12 @@ export type PendingChange =
   | { type: 'move-port'; portId: string; x: number; y: number }
   | { type: 'move-external-handle'; portId: string; offset: number }
   | { type: 'rename'; nodeId: string; label: string }
+  | {
+      type: 'update-node-details';
+      nodeId: string;
+      label: string;
+      description?: string;
+    }
   | { type: 'delete-node'; nodeId: string }
   | {
       type: 'connect-edge';
@@ -135,6 +141,7 @@ type CanvasStore = {
   replaceEdgeId: (tempEdgeId: string, edgeId: string) => void;
   updateNodePosition: (nodeId: string, x: number, y: number) => void;
   updateNodeLabel: (nodeId: string, label: string) => void;
+  updateNodeDetails: (nodeId: string, details: { label: string; description?: string },) => void;
   updateExternalHandleOffset: (portId: string, offset: number) => void;
   setPendingConnection: (pendingConnection: PendingConnection | null) => void;
   addTypedEdgeFromPending: (edgeType: string) => void;
@@ -690,6 +697,33 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         };
       }),
     })),
+
+
+    updateNodeDetails: (nodeId, details) =>
+      set((state) => ({
+        nodes: state.nodes.map((node) => {
+          if (node.id !== nodeId) {
+            return node;
+          }
+
+          if (node.type !== 'blockNode') {
+            return node;
+          }
+
+          if (!('label' in node.data) || !('nodeType' in node.data)) {
+            return node;
+          }
+
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: details.label,
+              description: details.description,
+            },
+          };
+        }),
+      })),
 
 
     updateFlowchartElementLabel: (elementId, label) => set((state) => ({

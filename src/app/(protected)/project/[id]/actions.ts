@@ -32,6 +32,7 @@ import { PrismaFlowchartConnectionRepository } from '../../../../infrastructure/
 import { coreFlowchartConnectionToFlow } from '../../../../presentation/canvas/mappers/flowchartConnectionMapper';
 import { RelabelFlowchartConnection } from '../../../../core/application/use-cases/flowchart/RelabelFlowchartConnection';
 import { ExportProjectJson } from '../../../../core/application/use-cases/project/ExportProjectJson';
+import { UpdateNodeDetails } from '../../../../core/application/use-cases/node/UpdateNodeDetails';
 
 async function assertOwnership(projectId: string) {
   const userId = await getUserId();
@@ -157,6 +158,22 @@ export async function renameNodeAction(input: { projectId: string; nodeId: strin
   const renameNode = new RenameNode(nodeRepository);
 
   return renameNode.execute({ nodeId: input.nodeId, label: input.label });
+}
+
+export async function updateNodeDetailsAction(input: {
+  projectId: string;
+  nodeId: string;
+  label?: string;
+  description?: string;
+}) {
+  const { nodeRepository } = await assertOwnership(input.projectId);
+  const updateNodeDetails = new UpdateNodeDetails(nodeRepository);
+
+  return updateNodeDetails.execute({
+    nodeId: input.nodeId,
+    label: input.label,
+    description: input.description,
+  });
 }
 
 export async function deleteNodeAction(input: { projectId: string; nodeId: string }) {
