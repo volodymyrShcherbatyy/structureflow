@@ -63,7 +63,7 @@ describe('UpdateNodeDetails', () => {
         nodeId: node.id.toString(),
         label: 'x'.repeat(NODE_LABEL_MAX_LENGTH + 1),
       }),
-    ).rejects.toThrow('Node label cannot be longer than 80 characters');
+    ).rejects.toThrow('Node label cannot be longer than 30 characters');
   });
 
   it('rejects too long description', async () => {
@@ -85,7 +85,7 @@ describe('UpdateNodeDetails', () => {
         nodeId: node.id.toString(),
         description: 'x'.repeat(NODE_DESCRIPTION_MAX_LENGTH + 1),
       }),
-    ).rejects.toThrow('Node description cannot be longer than 500 characters');
+    ).rejects.toThrow('Node description cannot be longer than 120 characters');
   });
 
   it('fails when node does not exist', async () => {
