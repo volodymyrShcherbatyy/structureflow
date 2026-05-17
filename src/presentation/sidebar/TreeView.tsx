@@ -136,6 +136,7 @@ function TreeItem({
           display: 'flex',
           alignItems: 'center',
           paddingLeft: 8 + level * 12,
+          minWidth: 0,
         }}
       >
         <span
@@ -166,6 +167,7 @@ function TreeItem({
           }}
           style={{
             flex: 1,
+            minWidth: 0,
             display: 'block',
             textAlign: 'left',
             padding: '4px 8px',
@@ -176,7 +178,11 @@ function TreeItem({
             color: isActive ? '#3730a3' : '#111827',
             fontWeight: isActive ? 600 : 400,
             borderRadius: 6,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
           }}
+          title={node.label}
         >
           {node.label}
         </button>
@@ -220,16 +226,18 @@ export function TreeView() {
       style={{
         flex: 1,
         overflowY: 'auto',
+        overflowX: 'hidden',
         padding: 12,
         height: '100%',
         minHeight: 0,
+        minWidth: 0,
       }}
     >
       <strong style={{ fontSize: 12, textTransform: 'uppercase' }}>
         Structure
       </strong>
 
-      <div style={{ marginTop: 8 }}>
+      <div style={{ marginTop: 8, minWidth: 0 }}>
         {tree.map((node) => (
           <TreeItem key={node.id} node={node} nodes={structuralNodes} />
         ))}
