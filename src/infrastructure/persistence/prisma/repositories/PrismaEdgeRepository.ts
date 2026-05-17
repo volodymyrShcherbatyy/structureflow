@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaDatabaseClient } from '../PrismaDatabaseClient';
 
 import { IEdgeRepository } from '../../../../core/application/ports/IEdgeRepository';
 import { Edge } from '../../../../core/domain/entities/Edge';
@@ -8,7 +8,7 @@ import { ProjectId } from '../../../../core/domain/value-objects/ProjectId';
 import { EdgeMapper } from '../mappers/EdgeMapper';
 
 export class PrismaEdgeRepository implements IEdgeRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaDatabaseClient) {}
 
   async findById(id: EdgeId): Promise<Edge | null> {
     const record = await this.prisma.edge.findUnique({

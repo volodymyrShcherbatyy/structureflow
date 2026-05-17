@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaDatabaseClient } from '../PrismaDatabaseClient';
 
 import { IPortRepository } from '../../../../core/application/ports/IPortRepository';
 import { Port } from '../../../../core/domain/entities/Port';
@@ -8,7 +8,7 @@ import { ProjectId } from '../../../../core/domain/value-objects/ProjectId';
 import { PortMapper } from '../mappers/PortMapper';
 
 export class PrismaPortRepository implements IPortRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaDatabaseClient) {}
 
   async findById(id: PortId): Promise<Port | null> {
     const record = await this.prisma.port.findUnique({
@@ -45,15 +45,13 @@ export class PrismaPortRepository implements IPortRepository {
   }
 
   async saveMany(ports: Port[]): Promise<void> {
-    await this.prisma.$transaction(
-      ports.map((port) =>
-        this.prisma.port.upsert({
-          where: { id: port.id.toString() },
-          create: PortMapper.toPrismaCreate(port),
-          update: PortMapper.toPrismaUpdate(port),
-        }),
-      ),
-    );
+    for (const port of ports) {
+      await this.prisma.port.upsert({
+        where: { id: port.id.toString() },
+        create: PortMapper.toPrismaCreate(port),
+        update: PortMapper.toPrismaUpdate(port),
+      });
+    }
   }
 
   async delete(id: PortId): Promise<void> {

@@ -104,18 +104,20 @@ export async function deleteProjectAction(projectId: string) {
 export async function importProjectJsonAction(snapshot: StructureFlowProjectJsonV1) {
   const ownerId = await getUserId();
 
-  const importProjectJson = new ImportProjectJson(
-    new PrismaProjectRepository(prisma),
-    new PrismaNodeRepository(prisma),
-    new PrismaEdgeRepository(prisma),
-    new PrismaPortRepository(prisma),
-    new PrismaFlowchartElementRepository(prisma),
-    new PrismaFlowchartConnectionRepository(prisma),
-  );
+  const { project } = await prisma.$transaction(async (tx) => {
+    const importProjectJson = new ImportProjectJson(
+      new PrismaProjectRepository(tx),
+      new PrismaNodeRepository(tx),
+      new PrismaEdgeRepository(tx),
+      new PrismaPortRepository(tx),
+      new PrismaFlowchartElementRepository(tx),
+      new PrismaFlowchartConnectionRepository(tx),
+    );
 
-  const { project } = await importProjectJson.execute({
-    ownerId,
-    snapshot,
+    return importProjectJson.execute({
+      ownerId,
+      snapshot,
+    });
   });
 
   revalidatePath('/dashboard');

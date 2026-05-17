@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaDatabaseClient } from '../PrismaDatabaseClient';
 
 import { INodeRepository } from '../../../../core/application/ports/INodeRepository';
 import { Node } from '../../../../core/domain/entities/Node';
@@ -7,7 +7,7 @@ import { ProjectId } from '../../../../core/domain/value-objects/ProjectId';
 import { NodeMapper } from '../mappers/NodeMapper';
 
 export class PrismaNodeRepository implements INodeRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaDatabaseClient) {}
 
   async findById(id: NodeId): Promise<Node | null> {
     const record = await this.prisma.node.findUnique({
@@ -35,15 +35,13 @@ export class PrismaNodeRepository implements INodeRepository {
   }
 
   async saveMany(nodes: Node[]): Promise<void> {
-    await this.prisma.$transaction(
-      nodes.map((node) =>
-        this.prisma.node.upsert({
-          where: { id: node.id.toString() },
-          create: NodeMapper.toPrismaCreate(node),
-          update: NodeMapper.toPrismaUpdate(node),
-        }),
-      ),
-    );
+    for (const node of nodes) {
+      await this.prisma.node.upsert({
+        where: { id: node.id.toString() },
+        create: NodeMapper.toPrismaCreate(node),
+        update: NodeMapper.toPrismaUpdate(node),
+      });
+    }
   }
 
   async delete(id: NodeId): Promise<void> {
