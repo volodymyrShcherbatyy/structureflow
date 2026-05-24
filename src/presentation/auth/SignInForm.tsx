@@ -1,77 +1,142 @@
-"use client"
+'use client';
 
-import { signIn } from "next-auth/react"
-import { useState } from "react"
-import Link from "next/link"
+import { signIn } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
+import { FormEvent, useState } from 'react';
+import { PublicAuthTextField } from '../public/PublicAuthTextField';
+import { PublicAuthSubmitButton } from '../public/PublicAuthSubmitButton';
+import { PublicAuthSecondaryButton } from '../public/PublicAuthSecondaryButton';
 
 export function SignInForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const searchParams = useSearchParams();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+  const wasRegistered = searchParams.get('registered') === 'true';
 
-    const result = await signIn("credentials", {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isCredentialsLoading, setIsCredentialsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setError(null);
+    setIsCredentialsLoading(true);
+
+    const result = await signIn('credentials', {
       email,
       password,
       redirect: false,
-    })
+    });
 
     if (result?.error) {
-      setError("Невірний email або пароль")
-      setLoading(false)
-      return
+      setError('Invalid email or password.');
+      setIsCredentialsLoading(false);
+      return;
     }
 
-    window.location.href = "/dashboard"
+    window.location.href = '/dashboard';
   }
 
   function handleGoogleLogin() {
-    signIn("google", { callbackUrl: "/dashboard" })
+    setError(null);
+    setIsGoogleLoading(true);
+    signIn('google', { callbackUrl: '/dashboard' });
   }
 
+  const isLoading = isCredentialsLoading || isGoogleLoading;
+
   return (
-    <div style={{ width: 300, display: "flex", flexDirection: "column", gap: 12 }}>
-      
-      <button onClick={handleGoogleLogin}>
-        Увійти через Google
-      </button>
+    <div style={{ display: 'grid', gap: 16 }}>
+      {wasRegistered ? (
+        <div
+          style={{
+            border: '1px solid #bbf7d0',
+            background: '#f0fdf4',
+            color: '#166534',
+            borderRadius: 12,
+            padding: '10px 12px',
+            fontSize: 13,
+            lineHeight: 1.5,
+          }}
+        >
+          Account created successfully. You can sign in now.
+        </div>
+      ) : null}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <input
-          placeholder="email"
+      <PublicAuthSecondaryButton
+        onClick={handleGoogleLogin}
+        loading={isLoading}
+      >
+        {isGoogleLoading ? 'Opening Google…' : 'Continue with Google'}
+      </PublicAuthSecondaryButton>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          gap: 12,
+          alignItems: 'center',
+          color: '#94a3b8',
+          fontSize: 12,
+          fontWeight: 700,
+        }}
+      >
+        <span style={{ height: 1, background: '#e2e8f0' }} />
+        or sign in with email
+        <span style={{ height: 1, background: '#e2e8f0' }} />
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          display: 'grid',
+          gap: 14,
+        }}
+      >
+        <PublicAuthTextField
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          autoComplete="email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+          disabled={isLoading}
         />
 
-        <input
-          placeholder="password"
+        <PublicAuthTextField
+          label="Password"
           type="password"
+          placeholder="Your password"
+          autoComplete="current-password"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+          disabled={isLoading}
         />
 
-        {error && (
-          <div style={{ color: "red", fontSize: 12 }}>
+        {error ? (
+          <div
+            style={{
+              border: '1px solid #fecaca',
+              background: '#fef2f2',
+              color: '#b91c1c',
+              borderRadius: 12,
+              padding: '10px 12px',
+              fontSize: 13,
+              lineHeight: 1.5,
+            }}
+          >
             {error}
           </div>
-        )}
+        ) : null}
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Входимо..." : "Login"}
-        </button>
-
-        <div style={{ fontSize: 12, textAlign: "center", marginTop: 8 }}>
-          Немає акаунту?{" "}
-          <Link href="/signup" style={{ color: "#2563eb" }}>
-            Зареєструватись
-          </Link>
-        </div>
+        <PublicAuthSubmitButton loading={isLoading}>
+          {isCredentialsLoading ? 'Signing in…' : 'Sign in'}
+        </PublicAuthSubmitButton>
       </form>
     </div>
-  )
+  );
 }
